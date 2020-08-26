@@ -63,7 +63,12 @@
     </build>
 
     <!-- List of project's dependencies -->
-    <dependencies>
+	<dependencies>
+		<!-- The core of Icy -->
+		<dependency>
+			<groupId>org.bioimageanalysis.icy</groupId>
+			<artifactId>icy-kernel</artifactId>
+		</dependency>
 
     </dependencies>
 
