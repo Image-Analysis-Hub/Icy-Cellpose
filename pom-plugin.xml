@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.bioimageanalysis.icy</groupId>
         <artifactId>pom-icy</artifactId>
-        <version>1.0.1</version>
+        <version>1.0.2</version>
     </parent>
 
     <!-- Project Information -->
@@ -66,4 +66,13 @@
     <dependencies>
 
     </dependencies>
+
+    <!-- Link to third-party Maven repositories -->
+    <repositories>
+        <repository>
+            <id>icy</id>
+            <name>Icy's Nexus</name>
+            <url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
+        </repository>
+    </repositories>
 </project>
