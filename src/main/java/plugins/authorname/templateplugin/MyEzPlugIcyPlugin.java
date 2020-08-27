@@ -46,7 +46,7 @@ public class MyEzPlugIcyPlugin extends EzPlug
 	{
 		final String str = "This plugin start button does not do anything useful.\n "
 				+ "You say you are " + age.getValue() + " years old and you "
-				+ ( yummy.getValue().booleanValue() ? "like" : "don't like" )
+				+ (yummy.getValue() ? "like" : "don't like" )
 				+ " chocolate.";
 		MessageDialog.showDialog( str );
 	}
@@ -56,27 +56,20 @@ public class MyEzPlugIcyPlugin extends EzPlug
 		final String imagePath = "samples/Cont1.lsm";
 
 		// Load in a separate thread.
-		ThreadUtil.bgRun( new Runnable()
-		{
-			@Override
-			public void run()
+		ThreadUtil.bgRun(() -> {
+
+			final Sequence sequence = Loader.loadSequence( imagePath, 0, true );
+
+			// Display the images.
+			try
 			{
-
-				final Sequence sequence = Loader.loadSequence( imagePath, 0, true );
-
-				// Display the images.
-				try
-				{
-					SwingUtilities.invokeAndWait( () -> {
-						new Viewer( sequence );
-					} );
-				}
-				catch ( InvocationTargetException | InterruptedException e )
-				{
-					e.printStackTrace();
-				}
+				SwingUtilities.invokeAndWait( () -> new Viewer( sequence ));
 			}
-		} );
+			catch ( InvocationTargetException | InterruptedException e )
+			{
+				e.printStackTrace();
+			}
+		});
 	}
 
 	public static void main( final String[] args )

@@ -42,76 +42,71 @@ public class MyIcyPlugin extends PluginActionable
 		 * does not prevent the EDT to deal with the user-interface.
 		 */
 
-		ThreadUtil.bgRun( new Runnable()
-		{
-			@Override
-			public void run()
+		ThreadUtil.bgRun(() -> {
+
+			/*
+			 * We are are not the EDT anymore. Now we can do heavy-lifting
+			 * operations and the Icy UI won't be blocked.
+			 */
+
+			final Sequence sequence = getActiveSequence();
+
+			// Check if a sequence is opened.
+			if ( sequence == null )
 			{
+				MessageDialog.showDialog( "This plugin needs an opened sequence." );
+				return;
+			}
 
-				/*
-				 * We are are not the EDT anymore. Now we can do heavy-lifting
-				 * operations and the Icy UI won't be blocked.
-				 */
+			final int width = sequence.getSizeX();
+			final int height = sequence.getSizeY();
+			final int nChannel = sequence.getSizeC();
 
-				final Sequence sequence = getActiveSequence();
-
-				// Check if a sequence is opened.
-				if ( sequence == null )
+			// Iterate over all the planes of the image, through C and Z.
+			for ( final IcyBufferedImage plane : sequence.getAllImage() )
+			{
+				try
 				{
-					MessageDialog.showDialog( "This plugin needs an opened sequence." );
-					return;
-				}
+					/*
+					 * We put the pixel edit between a beginUpdate() and an
+					 * endUpdate (all in a try/finally block), so that we
+					 * only display the display (which takes time) once the
+					 * edits of a plane are over.
+					 *
+					 * We could also have chosen to put the beginUpdate()
+					 * before editing the sequence to have only one display
+					 * update.
+					 */
 
-				final int width = sequence.getSizeX();
-				final int height = sequence.getSizeY();
-				final int nChannel = sequence.getSizeC();
+					plane.beginUpdate();
 
-				// Iterate over all the planes of the image, through C and Z.
-				for ( final IcyBufferedImage plane : sequence.getAllImage() )
-				{
-					try
+					/*
+					 * We pedestriantly iterate pixel by pixel and recopy
+					 * the value of the every 7th pixel on the 2 that
+					 * follows.
+					 */
+
+					for ( int c = 0; c < nChannel; c++ )
 					{
-						/*
-						 * We put the pixel edit between a beginUpdate() and an
-						 * endUpdate (all in a try/finally block), so that we
-						 * only display the display (which takes time) once the
-						 * edits of a plane are over.
-						 * 
-						 * We could also have chosen to put the beginUpdate()
-						 * before editing the sequence to have only one display
-						 * update.
-						 */
-
-						plane.beginUpdate();
-
-						/*
-						 * We pedestriantly iterate pixel by pixel and recopy
-						 * the value of the every 7th pixel on the 2 that
-						 * follows.
-						 */
-
-						for ( int c = 0; c < nChannel; c++ )
+						for ( int y = 0; y < height; y++ )
 						{
-							for ( int y = 0; y < height; y++ )
+							double val = 0;
+							for ( int x = 0; x < width; x++ )
 							{
-								double val = 0;
-								for ( int x = 0; x < width; x++ )
-								{
-									if ( x % 7 == 0 )
-										val = plane.getData( x, y, c );
+								if ( x % 7 == 0 )
+									val = plane.getData( x, y, c );
 
-									plane.setData( x, y, c, val );
-								}
+								plane.setData( x, y, c, val );
 							}
 						}
 					}
-					finally
-					{
-						plane.endUpdate();
-					}
+				}
+				finally
+				{
+					plane.endUpdate();
 				}
 			}
-		} );
+		});
 	}
 
 	/*
