@@ -12,18 +12,18 @@
     </parent>
 
     <!-- Project Information -->
-    <artifactId>artifactId</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>IcyPluginTemplate</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name></name>
-    <description></description>
+    <name>A template for Icy plugins.</name>
+    <description>This repo serves as a template for you to implement new Icy plugins.</description>
     <url></url>
-    <inceptionYear></inceptionYear>
+    <inceptionYear>2020</inceptionYear>
 
     <organization>
-        <name></name>
-        <url></url>
+        <name>MyOrganizationName</name>
+        <url>https://myorganizationwebsite.net</url>
     </organization>
 
     <licenses>
@@ -36,9 +36,9 @@
 
     <developers>
         <developer>
-            <id></id>
-            <name></name>
-            <url></url>
+            <id>mygithublogin</id>
+            <name>FirstName LastName</name>
+            <url>https://mywebpage.net</url>
             <roles>
                 <role>founder</role>
                 <role>lead</role>
