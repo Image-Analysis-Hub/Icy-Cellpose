@@ -1,10 +1,17 @@
 package plugins.authorname;
 
+import java.lang.reflect.InvocationTargetException;
+
+import javax.swing.SwingUtilities;
+
+import icy.file.Loader;
 import icy.gui.dialog.MessageDialog;
+import icy.gui.viewer.Viewer;
 import icy.image.IcyBufferedImage;
 import icy.main.Icy;
 import icy.plugin.abstract_.PluginActionable;
 import icy.sequence.Sequence;
+import icy.sequence.SequenceUtil;
 import icy.system.thread.ThreadUtil;
 
 /**
@@ -118,8 +125,25 @@ public class MyIcyPlugin extends PluginActionable
 	 * Icy plugins have a package that always starts with "plugins.authorname".
 	 */
 
-	public static void main( final String[] args )
+	public static void main( final String[] args ) throws InvocationTargetException, InterruptedException
 	{
+		// Launch the application.
 		Icy.main( args );
+
+		// Load an image.
+		final String imagePath = "samples/Cont1.lsm";
+		final Sequence sequence = Loader.loadSequence( imagePath, 0, true );
+
+		// Copy it so that we work on a copy.
+		final Sequence copy = SequenceUtil.getCopy( sequence );
+
+		// Display the images.
+		SwingUtilities.invokeAndWait( () -> {
+			new Viewer( sequence );
+			new Viewer( copy );
+		} );
+
+		// Run the plugin on the last active image (the copy).
+		new MyIcyPlugin().run();
 	}
 }
