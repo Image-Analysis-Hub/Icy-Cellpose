@@ -73,7 +73,7 @@ public class MyIcyPlugin extends PluginActionable
 					{
 						/*
 						 * We put the pixel edit between a beginUpdate() and an
-						 * endUpdate (all in a tr/finally block), so that we
+						 * endUpdate (all in a try/finally block), so that we
 						 * only display the display (which takes time) once the
 						 * edits of a plane are over.
 						 * 
