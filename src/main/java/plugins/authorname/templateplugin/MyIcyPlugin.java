@@ -1,4 +1,4 @@
-package plugins.authorname;
+package plugins.authorname.templateplugin;
 
 import java.lang.reflect.InvocationTargetException;
 
