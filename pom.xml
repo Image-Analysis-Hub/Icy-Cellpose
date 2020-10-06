@@ -73,11 +73,11 @@
     </dependencies>
 
     <!-- Link to third-party Maven repositories -->
-    <repositories>
+    <!--<repositories>
         <repository>
             <id>icy</id>
             <name>Icy's Nexus</name>
             <url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
         </repository>
-    </repositories>
+    </repositories>-->
 </project>
