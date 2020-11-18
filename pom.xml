@@ -82,9 +82,9 @@
     <!-- Link to third-party Maven repositories -->
     <repositories>
         <repository>
-            <id>server-id</id>
-            <name>Server's name</name>
-            <url>Server's url</url>
+            <id>icy</id>
+            <name>Icy's Nexus</name>
+            <url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
         </repository>
     </repositories>
 
