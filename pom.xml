@@ -73,7 +73,7 @@
 		<!-- The EzPlug library, simplifies writing UI for Icy plugins. -->
 		<dependency>
 			<groupId>org.bioimageanalysis.icy</groupId>
-			<artifactId>icy-ezplug</artifactId>
+			<artifactId>ezplug</artifactId>
 		</dependency>
 
     </dependencies>
