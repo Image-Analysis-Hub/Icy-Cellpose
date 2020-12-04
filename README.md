@@ -32,7 +32,7 @@ The `artefactId` will be the name of the jar file produced by the compilation of
 
 
 
-The dependency section contains only the Icy kernel (that has all the application, GUI, etc...) and the EzPlug library for now. Add more if you need it. The version of the `icy-kernel` is defined in the parent pom, so you don't have to specify it here.
+The dependency section contains only the Icy kernel (that has all the application, GUI, etc...) and the EzPlug library for now. Add more if you need it. The version of the `icy-kernel` and `ezplug` are defined in the parent pom, so you don't have to specify them here.
 
 ```xml
 <!-- List of project's dependencies -->
@@ -46,8 +46,7 @@ The dependency section contains only the Icy kernel (that has all the applicatio
   <!-- The EzPlug library, simplifies writing UI for Icy plugins. -->
   <dependency>
     <groupId>org.bioimageanalysis.icy</groupId>
-    <artifactId>icy-ezplug</artifactId>
-    <version>3.15.13</version>
+    <artifactId>ezplug</artifactId>
   </dependency>
 
 </dependencies>
