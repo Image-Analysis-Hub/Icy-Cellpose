@@ -1,19 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Inherited Icy Parent POM -->
     <parent>
         <groupId>org.bioimageanalysis.icy</groupId>
-        <artifactId>pom-icy</artifactId>
-        <version>1.0.7</version>
+        <artifactId>parent-pom-plugin</artifactId>
+        <version>1.0.1</version>
     </parent>
 
     <!-- Project Information -->
-    <artifactId>IcyPluginTemplate</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <artifactId>plugin-template</artifactId>
+    <version>1.0.1-SNAPSHOT</version>
+    
     <packaging>jar</packaging>
 
     <name>A template for Icy plugins.</name>
@@ -63,22 +64,22 @@
     </build>
 
     <!-- List of project's dependencies -->
-	<dependencies>
-		<!-- The core of Icy -->
-		<dependency>
-			<groupId>org.bioimageanalysis.icy</groupId>
-			<artifactId>icy-kernel</artifactId>
-		</dependency>
+    <dependencies>
+        <!-- The core of Icy -->
+        <dependency>
+            <groupId>org.bioimageanalysis.icy</groupId>
+            <artifactId>icy-kernel</artifactId>
+        </dependency>
 
-		<!-- The EzPlug library, simplifies writing UI for Icy plugins. -->
-		<dependency>
-			<groupId>org.bioimageanalysis.icy</groupId>
-			<artifactId>ezplug</artifactId>
-		</dependency>
+        <!-- The EzPlug library, simplifies writing UI for Icy plugins. -->
+        <dependency>
+            <groupId>org.bioimageanalysis.icy</groupId>
+            <artifactId>ezplug</artifactId>
+        </dependency>
 
     </dependencies>
 
-    <!-- Link to third-party Maven repositories -->
+    <!-- Icy Maven repository (to find parent POM) -->
     <repositories>
         <repository>
             <id>icy</id>
