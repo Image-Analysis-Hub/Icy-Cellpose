@@ -8,7 +8,7 @@ This repository serves as a template for your future Icy plugin. If you want to 
 
 ### The `pom.xml` file.
 
-The `pom` for Icy plugin is fairly standard. First it inherits from `pom-icy` that specifies a few default values used throughout the Icy application.
+The `pom` for Icy plugin is fairly standard. First it inherits from `parent-pom-plugin` that specifies a few default values used throughout the Icy application.
 
 You want to edit the first section on the plugin information:
 
