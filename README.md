@@ -14,10 +14,10 @@ You want to edit the first section on the plugin information:
 
 ```xml
  <!-- Project Information -->
-<artifactId>IcyPluginTemplate</artifactId>
+<artifactId>plugin-template</artifactId>
 ```
 
-The `artefactId` will be the name of the jar file produced by the compilation of the plugin. Put a sensible name for it since this is what you will have to upload to the Icy website to distribute the plugin.
+The `artefactId` will be the name of the jar file produced by the compilation of the plugin. Put a sensible name for it since this is what you will have to upload to the Icy website to distribute the plugin (lower case only and no space character).
 
 
 
