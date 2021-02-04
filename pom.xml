@@ -8,12 +8,12 @@
     <parent>
         <groupId>org.bioimageanalysis.icy</groupId>
         <artifactId>parent-pom-plugin</artifactId>
-        <version>1.0.1</version>
+        <version>1.0.3</version>
     </parent>
 
     <!-- Project Information -->
     <artifactId>plugin-template</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.2-SNAPSHOT</version>
     
     <packaging>jar</packaging>
 
