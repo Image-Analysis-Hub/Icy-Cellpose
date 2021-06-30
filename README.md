@@ -1,8 +1,21 @@
-# Template maven repository for Icy plugins.
+# Maven template repository for Icy plugins.
 
-![Icy logo](static/icy_imaging_software_logo-2.png)
+![Icy logo](static/icy_imaging_software_logo-2.png)  
+<!-- badges: start -->
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)  
+[![Twitter](https://img.shields.io/twitter/follow/Icy_BioImaging?style=social)](https://twitter.com/Icy_BioImaging)  
+[![Image.sc forum](https://img.shields.io/badge/discourse-forum-brightgreen.svg?style=flat)](https://forum.image.sc/tag/icy)  
+<!-- badges: end -->
+
+This is the repository for the source code of *Maven template plugin*, a plugin for the [bioimage analysis software Icy](http://icy.bioimageanalysis.org/), which was developed by members or former members of the [Biological Image Analysis unit at Institut Pasteur](https://research.pasteur.fr/en/team/bioimage-analysis/). This plugin is licensed under GPL3 license.     
+Icy is developed and maintained by [Biological Image Analysis unit at Institut Pasteur](https://research.pasteur.fr/en/team/bioimage-analysis/). The [source code of Icy](https://gitlab.pasteur.fr/bia/icy) is also licensed under a GPL3 license.     
+
+
+## Plugin description
 
 This repository serves as a template for your future Icy plugin. If you want to create a new Icy plugin using **maven** for dependency management, just clone this repository, and edit it to your needs. The following gives hints about what to edit and how.
+
+A more detailed user documentation can be found on the Maven template plugin documentation page on the Icy website: http://icy.bioimageanalysis.org/developer/create-a-new-icy-plugin/
 
 ## What to edit.
 
@@ -98,3 +111,35 @@ The two examples in this repository are inspired by it. You will find:
 
 The example image found in the `samples` folder is courtesy  of Jakub Sedzinsky, University of Copenhagen. It is an epithelium of the neural plate of _Xenopus laevis_ visualized by utrophin-GFP.
 
+
+## Installation instructions
+
+For end-users, refer to the documentation on the Icy website on [how to install an Icy plugin](http://icy.bioimageanalysis.org/tutorial/how-to-install-an-icy-plugin/).      
+
+For developers, see our [Contributing guidelines](https://gitlab.pasteur.fr/bia/icy/-/blob/master/CONTRIBUTING.md) and [Code of Conduct](https://gitlab.pasteur.fr/bia/icy/-/blob/master/CODE-OF-CONDUCT.md).
+
+
+## Main functions and usage
+
+<!-- list main functions, explain architecture, classname, give info on how to get started with the plugin. If applicable, how the package compares to other similar packages and/or how it relates to other packages -->
+
+Classname: `plugins.authorname.MyIcyPlugin` or `plugins.authorname.MyEzPlugIcyPlugin`
+
+
+## Citation 
+
+Please cite this plugins as follows:          
+
+
+Please also cite the Icy software and mention the version of Icy you used (bottom right corner of the GUI or first lines of the Output tab):     
+de Chaumont, F. et al. (2012) Icy: an open bioimage informatics platform for extended reproducible research, [Nature Methods](https://www.nature.com/articles/nmeth.2075), 9, pp. 690-696       
+http://icy.bioimageanalysis.org    
+
+
+
+## Author(s)      
+
+Amandine TOURNAY, Jean-Yves Tinevez, Stéphane Dallongeville
+
+
+## Additional information
