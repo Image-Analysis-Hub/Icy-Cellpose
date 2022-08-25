@@ -21,7 +21,7 @@ A more detailed user documentation can be found on the Maven template plugin doc
 
 ### The `pom.xml` file.
 
-The `pom` for Icy plugin is fairly standard. First it inherits from `parent-pom-plugin` that specifies a few default values used throughout the Icy application.
+The `pom` for Icy plugin is fairly standard. First it inherits from `pom-icy` that specifies a few default values used throughout the Icy application.
 
 You want to edit the first section on the plugin information:
 
