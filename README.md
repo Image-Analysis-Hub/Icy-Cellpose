@@ -87,7 +87,7 @@ Just keep it as is.
 By convention the Java package of Icy plugins takes the following form:
 
 ```java
-package plugins.authorname.pluginname
+package plugins.authorname.pluginname;
 ```
 
 `authorname` should be a condensed version of your name. For instance the author Alexandre Dufour uses `adufour`. Jean-Yves Tinevez uses `tinevez` _etc_.
@@ -139,7 +139,7 @@ http://icy.bioimageanalysis.org
 
 ## Author(s)      
 
-Amandine TOURNAY, Jean-Yves Tinevez, Stéphane Dallongeville
+Amandine TOURNAY, Jean-Yves Tinevez, Stéphane Dallongeville, Thomas MUSSET
 
 
 ## Additional information

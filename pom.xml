@@ -8,19 +8,17 @@
     <parent>
         <artifactId>pom-icy</artifactId>
         <groupId>org.bioimageanalysis.icy</groupId>
-        <version>2.1.0</version>
+        <version>2.1.5</version>
     </parent>
 
     <!-- Project Information -->
     <artifactId>plugin-template</artifactId>
-    <version>1.0.3-SNAPSHOT</version>
-    
-    <packaging>jar</packaging>
+    <version>1.0.0-SNAPSHOT</version>
 
     <name>A template for Icy plugins.</name>
     <description>This repo serves as a template for you to implement new Icy plugins.</description>
-    <url></url>
-    <inceptionYear>2020</inceptionYear>
+    <url>https://www.example.org</url>
+    <inceptionYear>2023</inceptionYear>
 
     <organization>
         <name>MyOrganizationName</name>
@@ -55,13 +53,8 @@
 
     <!-- Project properties -->
     <properties>
-
+        <artifact-to-extract>JMathPlot,JMathIO,JMathArray</artifact-to-extract>
     </properties>
-
-    <!-- Project build configuration -->
-    <build>
-
-    </build>
 
     <!-- List of project's dependencies -->
     <dependencies>
@@ -69,7 +62,7 @@
         <dependency>
             <groupId>org.bioimageanalysis.icy</groupId>
             <artifactId>icy-kernel</artifactId>
-            <version>2.1.4</version>
+            <version>2.4.3</version>
         </dependency>
 
         <!-- The EzPlug library, simplifies writing UI for Icy plugins. -->
@@ -78,6 +71,22 @@
             <artifactId>ezplug</artifactId>
         </dependency>
 
+        <!-- External libraries example -->
+        <dependency>
+            <groupId>com.github.yannrichet</groupId>
+            <artifactId>JMathPlot</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.yannrichet</groupId>
+            <artifactId>JMathIO</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.yannrichet</groupId>
+            <artifactId>JMathArray</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 
     <!-- Icy Maven repository (to find parent POM) -->
@@ -88,15 +97,4 @@
             <url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
         </repository>
     </repositories>
-
-    <distributionManagement>
-        <snapshotRepository>
-            <id>server-id</id>
-            <url>server's url</url>
-        </snapshotRepository>
-        <repository>
-            <id>server-id</id>
-            <url>server's url</url>
-        </repository>
-    </distributionManagement>
 </project>
