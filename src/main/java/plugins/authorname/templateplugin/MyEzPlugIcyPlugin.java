@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Institut Pasteur.
+ * Copyright (c) 2010-2024. Institut Pasteur.
  *
  * This file is part of Icy.
  * Icy is free software: you can redistribute it and/or modify
@@ -18,29 +18,31 @@
 
 package plugins.authorname.templateplugin;
 
-import icy.file.Loader;
-import icy.gui.dialog.MessageDialog;
-import icy.gui.viewer.Viewer;
-import icy.main.Icy;
-import icy.plugin.PluginLauncher;
-import icy.plugin.PluginLoader;
-import icy.sequence.Sequence;
-import icy.system.IcyExceptionHandler;
-import icy.system.thread.ThreadUtil;
+import org.bioimageanalysis.icy.Icy;
+import org.bioimageanalysis.icy.extension.plugin.PluginLauncher;
+import org.bioimageanalysis.icy.extension.plugin.PluginLoader;
+import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginDescription;
+import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginIcon;
+import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginName;
+import org.bioimageanalysis.icy.gui.dialog.MessageDialog;
+import org.bioimageanalysis.icy.gui.viewer.Viewer;
+import org.bioimageanalysis.icy.io.Loader;
+import org.bioimageanalysis.icy.model.sequence.Sequence;
+import org.bioimageanalysis.icy.system.logging.IcyLogger;
+import org.bioimageanalysis.icy.system.thread.ThreadUtil;
 import plugins.adufour.ezplug.EzButton;
 import plugins.adufour.ezplug.EzPlug;
 import plugins.adufour.ezplug.EzVarBoolean;
 import plugins.adufour.ezplug.EzVarInteger;
 
 import javax.swing.*;
-import java.lang.reflect.InvocationTargetException;
 
+@IcyPluginName("Template (EzPlug)") // This is the text that will be displayed on the UI
+@IcyPluginDescription(shortDesc = "Description of my plugin.", longDesc = "") // Display the short description inside a tooltip on the UI (WIP)
+@IcyPluginIcon(path = "/icon.svg", monochrome = false) // Do not forget to add '/' at the beginning, The icon must be SVG (monochrome or colored), PNG or JPG
 public class MyEzPlugIcyPlugin extends EzPlug {
-
     private final EzVarInteger age = new EzVarInteger("Your age", 30, 10, 100, 1);
-
     private final EzVarBoolean yummy = new EzVarBoolean("Like chocolate?", true);
-
     private final EzButton button = new EzButton("Load an show an image now", l -> loadAndShow());
 
     @Override
@@ -63,6 +65,9 @@ public class MyEzPlugIcyPlugin extends EzPlug {
                 + (yummy.getValue() ? "like" : "don't like")
                 + " chocolate.";
         MessageDialog.showDialog(str);
+
+        // You can make some logs with IcyLogger class with these levels: trace, debug, info, warn, error, fatal (error and fatal are always printed on screen)
+        IcyLogger.info(this.getClass(), str);
     }
 
     private void loadAndShow() {
@@ -70,15 +75,16 @@ public class MyEzPlugIcyPlugin extends EzPlug {
 
         // Load in a separate thread.
         ThreadUtil.bgRun(() -> {
+            try (final Sequence sequence = Loader.loadSequence(imagePath, 0, true)) {
 
-            final Sequence sequence = Loader.loadSequence(imagePath, 0, true);
-
-            // Display the images.
-            try {
+                // Display the images.
                 SwingUtilities.invokeAndWait(() -> new Viewer(sequence));
             }
-            catch (final InvocationTargetException | InterruptedException e) {
-                IcyExceptionHandler.showErrorMessage(e, true);
+            catch (final InterruptedException e) {
+                IcyLogger.warn(this.getClass(), e, "Interrupted by user.");
+            }
+            catch (final Exception e) {
+                IcyLogger.error(this.getClass(), e, "Error loading sequence.");
             }
         });
     }
@@ -86,6 +92,7 @@ public class MyEzPlugIcyPlugin extends EzPlug {
     /**
      * Only for test purpose.
      */
+    @SuppressWarnings("resource")
     public static void main(final String[] args) {
         // Launch the application.
         Icy.main(args);

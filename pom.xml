@@ -8,14 +8,14 @@
     <parent>
         <artifactId>pom-icy</artifactId>
         <groupId>org.bioimageanalysis.icy</groupId>
-        <version>2.1.5</version>
+        <version>3.0.0-a.1</version>
     </parent>
 
     <!-- Project Information -->
     <artifactId>plugin-template</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>3.0.0-a.1</version>
 
-    <name>A template for Icy plugins.</name>
+    <name>A template for Icy extensions.</name>
     <description>This repo serves as a template for you to implement new Icy plugins.</description>
     <url>https://www.example.org</url>
     <inceptionYear>2023</inceptionYear>
@@ -51,18 +51,12 @@
         </developer>
     </developers>
 
-    <!-- Project properties -->
-    <properties>
-        <artifact-to-extract>JMathPlot,JMathIO,JMathArray</artifact-to-extract>
-    </properties>
-
     <!-- List of project's dependencies -->
     <dependencies>
-        <!-- The core of Icy -->
+        <!-- The Kernel default extensions -->
         <dependency>
             <groupId>org.bioimageanalysis.icy</groupId>
-            <artifactId>icy-kernel</artifactId>
-            <version>2.4.3</version>
+            <artifactId>kernel-extensions</artifactId>
         </dependency>
 
         <!-- The EzPlug library, simplifies writing UI for Icy plugins. -->
@@ -71,21 +65,17 @@
             <artifactId>ezplug</artifactId>
         </dependency>
 
+        <!-- The Protocols extension, needed for batch processes -->
+        <dependency>
+            <groupId>org.bioimageanalysis.icy</groupId>
+            <artifactId>protocols</artifactId>
+        </dependency>
+
         <!-- External libraries example -->
         <dependency>
-            <groupId>com.github.yannrichet</groupId>
-            <artifactId>JMathPlot</artifactId>
-            <version>1.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.yannrichet</groupId>
-            <artifactId>JMathIO</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.yannrichet</groupId>
-            <artifactId>JMathArray</artifactId>
-            <version>1.0</version>
+            <groupId>com.github.jiconfont</groupId>
+            <artifactId>jiconfont</artifactId>
+            <version>1.0.0</version>
         </dependency>
     </dependencies>
 
@@ -93,8 +83,7 @@
     <repositories>
         <repository>
             <id>icy</id>
-            <name>Icy's Nexus</name>
-            <url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
+            <url>https://nexus-icy.pasteur.cloud/repository/icy/</url>
         </repository>
     </repositories>
 </project>

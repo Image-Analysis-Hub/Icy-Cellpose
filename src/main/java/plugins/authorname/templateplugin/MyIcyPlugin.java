@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Institut Pasteur.
+ * Copyright (c) 2010-2024. Institut Pasteur.
  *
  * This file is part of Icy.
  * Icy is free software: you can redistribute it and/or modify
@@ -18,15 +18,17 @@
 
 package plugins.authorname.templateplugin;
 
-import icy.file.Loader;
-import icy.gui.dialog.MessageDialog;
-import icy.gui.viewer.Viewer;
-import icy.image.IcyBufferedImage;
-import icy.main.Icy;
-import icy.plugin.abstract_.PluginActionable;
-import icy.sequence.Sequence;
-import icy.sequence.SequenceUtil;
-import icy.system.thread.ThreadUtil;
+import org.bioimageanalysis.icy.Icy;
+import org.bioimageanalysis.icy.extension.plugin.abstract_.PluginActionable;
+import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginIcon;
+import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginName;
+import org.bioimageanalysis.icy.gui.dialog.MessageDialog;
+import org.bioimageanalysis.icy.gui.viewer.Viewer;
+import org.bioimageanalysis.icy.io.Loader;
+import org.bioimageanalysis.icy.model.image.IcyBufferedImage;
+import org.bioimageanalysis.icy.model.sequence.Sequence;
+import org.bioimageanalysis.icy.model.sequence.SequenceUtil;
+import org.bioimageanalysis.icy.system.thread.ThreadUtil;
 
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
@@ -42,8 +44,9 @@ import java.lang.reflect.InvocationTargetException;
  *
  * @author Jean-Yves Tinevez
  */
+@IcyPluginName("Template (Actionnable)")
+@IcyPluginIcon(path = "/icon.svg")
 public class MyIcyPlugin extends PluginActionable {
-
     /*
      * The run() method is called when the user presses the plugin button.
      */
@@ -56,7 +59,6 @@ public class MyIcyPlugin extends PluginActionable {
          */
 
         ThreadUtil.bgRun(() -> {
-
             /*
              * We are not the EDT anymore. Now we can do heavy-lifting
              * operations and the Icy UI won't be blocked.
@@ -127,6 +129,7 @@ public class MyIcyPlugin extends PluginActionable {
      * <p>
      * Only for test purpose.
      */
+    @SuppressWarnings("resource")
     public static void main(final String[] args) throws InvocationTargetException, InterruptedException {
         // Launch the application.
         Icy.main(args);
