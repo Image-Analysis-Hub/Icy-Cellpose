@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Institut Pasteur.
+ * Copyright (c) 2010-2025. Institut Pasteur.
  *
  * This file is part of Icy.
  * Icy is free software: you can redistribute it and/or modify
@@ -16,21 +16,18 @@
  * along with Icy. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package plugins.authorname.templateplugin;
+package icy.plugins.authorname.plugintemplate;
 
 import org.bioimageanalysis.icy.extension.plugin.abstract_.Plugin;
-import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginIcon;
 import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginName;
 import org.jetbrains.annotations.NotNull;
 import plugins.adufour.blocks.lang.Block;
 import plugins.adufour.blocks.util.VarList;
-import plugins.adufour.ezplug.EzVarInteger;
 import plugins.adufour.vars.lang.VarInteger;
 
 import java.util.Calendar;
 
 @IcyPluginName("Template (Block)")
-@IcyPluginIcon(path = "/icon.svg")
 public class MyBlockIcyPlugin extends Plugin implements Block {
     private final VarInteger age = new VarInteger("Age", 30);
     private final VarInteger birth = new VarInteger("Birth Year", 1900);

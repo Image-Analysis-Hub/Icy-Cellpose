@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Institut Pasteur.
+ * Copyright (c) 2010-2025. Institut Pasteur.
  *
  * This file is part of Icy.
  * Icy is free software: you can redistribute it and/or modify
@@ -16,13 +16,9 @@
  * along with Icy. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package plugins.authorname.templateplugin;
+package icy.plugins.authorname.plugintemplate;
 
-import org.bioimageanalysis.icy.Icy;
-import org.bioimageanalysis.icy.extension.plugin.PluginLauncher;
-import org.bioimageanalysis.icy.extension.plugin.PluginLoader;
 import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginDescription;
-import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginIcon;
 import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginName;
 import org.bioimageanalysis.icy.gui.dialog.MessageDialog;
 import org.bioimageanalysis.icy.gui.viewer.Viewer;
@@ -38,8 +34,7 @@ import plugins.adufour.ezplug.EzVarInteger;
 import javax.swing.*;
 
 @IcyPluginName("Template (EzPlug)") // This is the text that will be displayed on the UI
-@IcyPluginDescription(shortDesc = "Description of my plugin.", longDesc = "") // Display the short description inside a tooltip on the UI (WIP)
-@IcyPluginIcon(path = "/icon.svg", monochrome = false) // Do not forget to add '/' at the beginning, The icon must be SVG (monochrome or colored), PNG or JPG
+@IcyPluginDescription("Description of my plugin.") // Display the short description inside a tooltip on the UI (WIP)
 public class MyEzPlugIcyPlugin extends EzPlug {
     private final EzVarInteger age = new EzVarInteger("Your age", 30, 10, 100, 1);
     private final EzVarBoolean yummy = new EzVarBoolean("Like chocolate?", true);
@@ -87,20 +82,5 @@ public class MyEzPlugIcyPlugin extends EzPlug {
                 IcyLogger.error(this.getClass(), e, "Error loading sequence.");
             }
         });
-    }
-
-    /**
-     * Only for test purpose.
-     */
-    @SuppressWarnings("resource")
-    public static void main(final String[] args) {
-        // Launch the application.
-        Icy.main(args);
-
-        /*
-         * Programmatically launch a plugin, as if the user had clicked its
-         * button.
-         */
-        PluginLauncher.start(PluginLoader.getPlugin(MyEzPlugIcyPlugin.class.getName()));
     }
 }

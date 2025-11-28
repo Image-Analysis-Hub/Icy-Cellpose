@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Institut Pasteur.
+ * Copyright (c) 2010-2025. Institut Pasteur.
  *
  * This file is part of Icy.
  * Icy is free software: you can redistribute it and/or modify
@@ -16,11 +16,10 @@
  * along with Icy. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package plugins.authorname.templateplugin;
+package icy.plugins.authorname.plugintemplate;
 
 import org.bioimageanalysis.icy.Icy;
 import org.bioimageanalysis.icy.extension.plugin.abstract_.PluginActionable;
-import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginIcon;
 import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginName;
 import org.bioimageanalysis.icy.gui.dialog.MessageDialog;
 import org.bioimageanalysis.icy.gui.viewer.Viewer;
@@ -45,7 +44,6 @@ import java.lang.reflect.InvocationTargetException;
  * @author Jean-Yves Tinevez
  */
 @IcyPluginName("Template (Actionnable)")
-@IcyPluginIcon(path = "/icon.svg")
 public class MyIcyPlugin extends PluginActionable {
     /*
      * The run() method is called when the user presses the plugin button.
@@ -68,7 +66,7 @@ public class MyIcyPlugin extends PluginActionable {
 
             // Check if a sequence is opened.
             if (sequence == null) {
-                MessageDialog.showDialog("This plugin needs an opened sequence.");
+                MessageDialog.showDialog("This plugin needs an opened image.");
                 return;
             }
 

@@ -1,62 +1,92 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Inherited Icy Parent POM -->
     <parent>
         <artifactId>pom-icy</artifactId>
         <groupId>org.bioimageanalysis.icy</groupId>
-        <version>3.0.0-a.1</version>
+        <version>3.0.0-a.5</version>
     </parent>
 
     <!-- Project Information -->
-    <artifactId>plugin-template</artifactId>
-    <version>3.0.0-a.1</version>
+    <groupId>my.group.id</groupId>
+    <artifactId>artifact-id</artifactId>
+    <version>3.0.0-a.5</version>
 
-    <name>A template for Icy extensions.</name>
-    <description>This repo serves as a template for you to implement new Icy plugins.</description>
+    <name>Extension name</name>
+    <description>A short description of your extension</description>
     <url>https://www.example.org</url>
-    <inceptionYear>2023</inceptionYear>
+    <inceptionYear>2025</inceptionYear>
+
+    <scm>
+        <!-- Replace this URL with your Git repository URL -->
+        <url>https://gitlab.pasteur.fr/bia/icy/extensions/extension-template</url>
+        <!-- Usually, version tags in git are named with the same convention as Maven, but you can change it -->
+        <tag>v${project.version}</tag>
+    </scm>
+
+    <issueManagement>
+        <!-- Replace this with your Git repository issues management -->
+        <system>GitLab Issues</system>
+        <url>https://gitlab.pasteur.fr/bia/icy/extensions/extension-template/-/issues</url>
+    </issueManagement>
+    <ciManagement>
+        <!-- Replace this with your Git repository CI management -->
+        <system>GitLab CI</system>
+        <url>https://gitlab.pasteur.fr/bia/icy/extensions/extension-template/-/pipelines</url>
+    </ciManagement>
 
     <organization>
+        <!-- Replace this with your organization name and URL -->
         <name>MyOrganizationName</name>
         <url>https://myorganizationwebsite.net</url>
     </organization>
 
     <licenses>
         <license>
-            <name>GNU GPLv3</name>
-            <url>https://www.gnu.org/licenses/gpl-3.0.en.html</url>
+            <name>GNU LGPLv3</name>
+            <url>https://www.gnu.org/licenses/lgpl-3.0</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
 
     <developers>
         <developer>
-            <id>mygithublogin</id>
+            <id>my-id</id>
             <name>FirstName LastName</name>
             <url>https://mywebpage.net</url>
-            <roles>
-                <role>founder</role>
-                <role>lead</role>
-                <role>architect</role>
-                <role>developer</role>
-                <role>debugger</role>
-                <role>tester</role>
-                <role>maintainer</role>
-                <role>support</role>
-            </roles>
         </developer>
     </developers>
+
+    <contributors>
+        <contributor>
+            <name>Fistname Lastname</name>
+        </contributor>
+    </contributors>
+
+    <mailingLists>
+        <mailingList>
+            <!-- Replace this with your mailing list -->
+            <name>MyMailingList</name>
+            <post>contact@example.org</post>
+        </mailingList>
+    </mailingLists>
+
+    <properties>
+        <license.licenseName>GNU LGPLv3</license.licenseName>
+        <!-- Replace this with your organization name -->
+        <license.copyrightOwners>MyOrganizationName</license.copyrightOwners>
+    </properties>
 
     <!-- List of project's dependencies -->
     <dependencies>
         <!-- The Kernel default extensions -->
         <dependency>
             <groupId>org.bioimageanalysis.icy</groupId>
-            <artifactId>kernel-extensions</artifactId>
+            <artifactId>kernel-extension</artifactId>
         </dependency>
 
         <!-- The EzPlug library, simplifies writing UI for Icy plugins. -->
@@ -70,20 +100,5 @@
             <groupId>org.bioimageanalysis.icy</groupId>
             <artifactId>protocols</artifactId>
         </dependency>
-
-        <!-- External libraries example -->
-        <dependency>
-            <groupId>com.github.jiconfont</groupId>
-            <artifactId>jiconfont</artifactId>
-            <version>1.0.0</version>
-        </dependency>
     </dependencies>
-
-    <!-- Icy Maven repository (to find parent POM) -->
-    <repositories>
-        <repository>
-            <id>icy</id>
-            <url>https://nexus-icy.pasteur.cloud/repository/icy/</url>
-        </repository>
-    </repositories>
 </project>
