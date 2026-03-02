@@ -18,21 +18,25 @@
 
 package plugins.tinevez.appose.cellpose;
 
-import icy.file.Loader;
-import icy.gui.dialog.MessageDialog;
-import icy.gui.viewer.Viewer;
-import icy.main.Icy;
-import icy.plugin.PluginLauncher;
-import icy.plugin.PluginLoader;
-import icy.sequence.Sequence;
-import icy.system.IcyExceptionHandler;
-import icy.system.thread.ThreadUtil;
 import plugins.adufour.ezplug.EzButton;
 import plugins.adufour.ezplug.EzPlug;
 import plugins.adufour.ezplug.EzVarBoolean;
 import plugins.adufour.ezplug.EzVarInteger;
 
 import javax.swing.*;
+
+import org.bioimageanalysis.icy.Icy;
+import org.bioimageanalysis.icy.extension.ExtensionLoader;
+import org.bioimageanalysis.icy.extension.plugin.PluginLauncher;
+import org.bioimageanalysis.icy.extension.plugin.PluginLoader;
+import org.bioimageanalysis.icy.gui.dialog.MessageDialog;
+import org.bioimageanalysis.icy.gui.viewer.Viewer;
+import org.bioimageanalysis.icy.io.Loader;
+import org.bioimageanalysis.icy.model.sequence.Sequence;
+import org.bioimageanalysis.icy.system.IcyExceptionHandler;
+import org.bioimageanalysis.icy.system.logging.IcyLogger;
+import org.bioimageanalysis.icy.system.thread.ThreadUtil;
+
 import java.lang.reflect.InvocationTargetException;
 
 public class MyEzPlugIcyPlugin extends EzPlug
@@ -83,7 +87,7 @@ public class MyEzPlugIcyPlugin extends EzPlug
 			}
 			catch ( final InvocationTargetException | InterruptedException e )
 			{
-				IcyExceptionHandler.showErrorMessage( e, true );
+				IcyLogger.warn( getClass(), e );
 			}
 		} );
 	}
@@ -100,6 +104,6 @@ public class MyEzPlugIcyPlugin extends EzPlug
 		 * Programmatically launch a plugin, as if the user had clicked its
 		 * button.
 		 */
-		PluginLauncher.start( PluginLoader.getPlugin( MyEzPlugIcyPlugin.class.getName() ) );
+		PluginLauncher.start( ExtensionLoader.getPlugin( MyEzPlugIcyPlugin.class.getName() ) );
 	}
 }

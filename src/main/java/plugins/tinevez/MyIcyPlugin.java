@@ -18,18 +18,19 @@
 
 package plugins.tinevez.appose.cellpose;
 
-import icy.file.Loader;
-import icy.gui.dialog.MessageDialog;
-import icy.gui.viewer.Viewer;
-import icy.image.IcyBufferedImage;
-import icy.main.Icy;
-import icy.plugin.abstract_.PluginActionable;
-import icy.sequence.Sequence;
-import icy.sequence.SequenceUtil;
-import icy.system.thread.ThreadUtil;
-
-import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
+
+import javax.swing.SwingUtilities;
+
+import org.bioimageanalysis.icy.Icy;
+import org.bioimageanalysis.icy.extension.plugin.abstract_.PluginActionable;
+import org.bioimageanalysis.icy.gui.dialog.MessageDialog;
+import org.bioimageanalysis.icy.gui.viewer.Viewer;
+import org.bioimageanalysis.icy.io.Loader;
+import org.bioimageanalysis.icy.model.image.IcyBufferedImage;
+import org.bioimageanalysis.icy.model.sequence.Sequence;
+import org.bioimageanalysis.icy.model.sequence.SequenceUtil;
+import org.bioimageanalysis.icy.system.thread.ThreadUtil;
 
 /**
  * A simple plugin demonstration.

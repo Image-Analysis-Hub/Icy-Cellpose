@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Inherited Icy Parent POM -->
@@ -25,43 +25,66 @@
         <url>https://pasteur.fr</url>
     </organization>
 
+    <scm>
+        <!-- Replace this URL with your Git repository URL -->
+        <url>https://gitlab.pasteur.fr/bia/icy/extensions/extension-template</url>
+        <!-- Usually, version tags in git are named with the same convention as Maven, but you can change it -->
+        <tag>v${project.version}</tag>
+    </scm>
+
+    <issueManagement>
+        <!-- Replace this with your Git repository issues management -->
+        <system>GitLab Issues</system>
+        <url>https://gitlab.pasteur.fr/bia/icy/extensions/extension-template/-/issues</url>
+    </issueManagement>
+    <ciManagement>
+        <!-- Replace this with your Git repository CI management -->
+        <system>GitLab CI</system>
+        <url>https://gitlab.pasteur.fr/bia/icy/extensions/extension-template/-/pipelines</url>
+    </ciManagement>
+
     <licenses>
         <license>
-            <name>GNU GPLv3</name>
-            <url>https://www.gnu.org/licenses/gpl-3.0.en.html</url>
+            <name>GNU LGPLv3</name>
+            <url>https://www.gnu.org/licenses/lgpl-3.0</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
 
     <developers>
         <developer>
-            <id>mygithublogin</id>
+            <id>my-id</id>
             <name>FirstName LastName</name>
             <url>https://mywebpage.net</url>
-            <roles>
-                <role>founder</role>
-                <role>lead</role>
-                <role>architect</role>
-                <role>developer</role>
-                <role>debugger</role>
-                <role>tester</role>
-                <role>maintainer</role>
-                <role>support</role>
-            </roles>
         </developer>
     </developers>
 
-    <!-- Project properties -->
+    <contributors>
+        <contributor>
+            <name>Fistname Lastname</name>
+        </contributor>
+    </contributors>
+
+    <mailingLists>
+        <mailingList>
+            <!-- Replace this with your mailing list -->
+            <name>MyMailingList</name>
+            <post>contact@example.org</post>
+        </mailingList>
+    </mailingLists>
+
     <properties>
-        <artifact-to-extract>JMathPlot,JMathIO,JMathArray</artifact-to-extract>
+        <license.licenseName>GNU LGPLv3</license.licenseName>
+        <!-- Replace this with your organization name -->
+        <license.copyrightOwners>MyOrganizationName</license.copyrightOwners>
     </properties>
 
     <!-- List of project's dependencies -->
     <dependencies>
-        <!-- The core of Icy -->
+        <!-- The Kernel default extensions -->
         <dependency>
             <groupId>org.bioimageanalysis.icy</groupId>
-            <artifactId>icy-kernel</artifactId>
+            <artifactId>kernel-extension</artifactId>
         </dependency>
 
         <!-- The EzPlug library, simplifies writing UI for Icy plugins. -->
@@ -78,13 +101,4 @@
 		</dependency>
 
     </dependencies>
-
-    <!-- Icy Maven repository (to find parent POM) -->
-    <repositories>
-        <repository>
-            <id>icy</id>
-            <name>Icy's Nexus</name>
-            <url>https://icy-nexus.pasteur.fr/repository/Icy/</url>
-        </repository>
-    </repositories>
 </project>
