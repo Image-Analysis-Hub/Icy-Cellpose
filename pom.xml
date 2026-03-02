@@ -8,21 +8,21 @@
     <parent>
         <artifactId>pom-icy</artifactId>
         <groupId>org.bioimageanalysis.icy</groupId>
-        <version>2.1.5</version>
+        <version>3.0.0-a.5</version>
     </parent>
 
     <!-- Project Information -->
-    <artifactId>plugin-template</artifactId>
+    <artifactId>icy-cellpose</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
-    <name>A template for Icy plugins.</name>
-    <description>This repo serves as a template for you to implement new Icy plugins.</description>
-    <url>https://www.example.org</url>
-    <inceptionYear>2023</inceptionYear>
+    <name>Icy-Cellpose</name>
+    <description>Cellpose 3 integration in Icy via Appose.</description>
+    <url>https://github.com/Image-Analysis-Hub/Icy-Cellpose</url>
+    <inceptionYear>2026</inceptionYear>
 
     <organization>
-        <name>MyOrganizationName</name>
-        <url>https://myorganizationwebsite.net</url>
+        <name>Institut Pasteur</name>
+        <url>https://pasteur.fr</url>
     </organization>
 
     <licenses>
@@ -62,7 +62,6 @@
         <dependency>
             <groupId>org.bioimageanalysis.icy</groupId>
             <artifactId>icy-kernel</artifactId>
-            <version>2.4.3</version>
         </dependency>
 
         <!-- The EzPlug library, simplifies writing UI for Icy plugins. -->
@@ -71,22 +70,13 @@
             <artifactId>ezplug</artifactId>
         </dependency>
 
-        <!-- External libraries example -->
-        <dependency>
-            <groupId>com.github.yannrichet</groupId>
-            <artifactId>JMathPlot</artifactId>
-            <version>1.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.yannrichet</groupId>
-            <artifactId>JMathIO</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.yannrichet</groupId>
-            <artifactId>JMathArray</artifactId>
-            <version>1.0</version>
-        </dependency>
+		<!-- Appose dependencies -->
+		<dependency>
+			<groupId>org.apposed</groupId>
+			<artifactId>appose</artifactId>
+			<version>0.10.0</version>
+		</dependency>
+
     </dependencies>
 
     <!-- Icy Maven repository (to find parent POM) -->
