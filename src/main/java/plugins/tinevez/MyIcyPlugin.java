@@ -16,7 +16,7 @@
  * along with Icy. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package plugins.tinevez.appose.cellpose;
+package plugins.tinevez;
 
 import java.lang.reflect.InvocationTargetException;
 
