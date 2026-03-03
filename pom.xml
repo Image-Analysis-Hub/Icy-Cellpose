@@ -92,6 +92,11 @@
             <groupId>org.bioimageanalysis.icy</groupId>
             <artifactId>ezplug</artifactId>
         </dependency>
+        
+        <dependency>
+        	<groupId>org.bioimageanalysis.icy</groupId>
+            <artifactId>imglib2-icy</artifactId>
+        </dependency>
 
 		<!-- Appose dependencies -->
 		<dependency>
@@ -99,6 +104,11 @@
 			<artifactId>appose</artifactId>
 			<version>0.10.0</version>
 		</dependency>
+		<dependency>
+			<groupId>net.imglib2</groupId>
+			<artifactId>imglib2-appose</artifactId>
+			<version>0.9.0</version>
+		</dependency>		
 
     </dependencies>
 </project>
