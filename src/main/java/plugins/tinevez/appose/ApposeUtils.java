@@ -1,4 +1,4 @@
-package plugins.tinevez;
+package plugins.tinevez.appose;
 
 import java.util.function.Consumer;
 

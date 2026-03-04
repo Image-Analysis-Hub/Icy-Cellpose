@@ -41,7 +41,8 @@ import net.imglib2.appose.NDArrays;
 import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import plugins.tinevez.ApposeUtils.IcyApposeLogger;
+import plugins.tinevez.appose.ApposeUtils;
+import plugins.tinevez.appose.ApposeUtils.IcyApposeLogger;
 import plugins.tinevez.imglib2icy.ImgLib2IcyFunctions;
 
 public class MyIcyPlugin extends PluginActionable
