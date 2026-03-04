@@ -18,6 +18,9 @@ target/
 .springBeans
 .sts4-cache
 
+### Icy ###
+setting.xml
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
