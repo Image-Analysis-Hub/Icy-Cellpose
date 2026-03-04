@@ -1,7 +1,11 @@
 package plugins.tinevez.appose;
 
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apposed.appose.Builder.ProgressConsumer;
@@ -9,6 +13,29 @@ import org.bioimageanalysis.icy.gui.frame.progress.ProgressFrame;
 
 public class ApposeUtils
 {
+
+	/**
+	 * Utility method to load a Pixi environment from resources.
+	 *
+	 * @param resourcePath
+	 *            the resource path.
+	 * @return the Pixi environment as a string.
+	 */
+	public static String pixiEnv( final String resourcePath )
+	{
+		String env = "";
+		try
+		{
+			final URL pixiFile = ApposeUtils.class.getResource( resourcePath );
+			env = IOUtils.toString( pixiFile, StandardCharsets.UTF_8 );
+
+		}
+		catch ( final IOException e )
+		{
+			e.printStackTrace();
+		}
+		return env;
+	}
 
 	/**
 	 * Utility method to load an Appose script template from resources.
