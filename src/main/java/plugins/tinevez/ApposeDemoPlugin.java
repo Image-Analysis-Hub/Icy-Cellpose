@@ -45,7 +45,7 @@ import plugins.tinevez.appose.ApposeUtils;
 import plugins.tinevez.appose.ApposeUtils.IcyApposeLogger;
 import plugins.tinevez.imglib2icy.ImgLib2IcyFunctions;
 
-public class MyIcyPlugin extends PluginActionable
+public class ApposeDemoPlugin extends PluginActionable
 {
 
 	/*
@@ -94,8 +94,7 @@ public class MyIcyPlugin extends PluginActionable
 		@SuppressWarnings( "unchecked" )
 		final Sequence output = ImgLib2IcyFunctions.wrap( out );
 
-		output.setName( "Cellpose output - " + sequence.getName() );
-		output.setChannelName( 0, "Cellpose labels" );
+		output.setName( "Rotated output - " + sequence.getName() );
 		output.setPixelSizeX( sequence.getPixelSizeX() );
 		output.setPixelSizeY( sequence.getPixelSizeY() );
 		output.setPixelSizeZ( sequence.getPixelSizeZ() );
@@ -147,15 +146,15 @@ public class MyIcyPlugin extends PluginActionable
 			 * Create or retrieve the environment.
 			 * 
 			 * The first time this code is run, Appose will create the mamba
-			 * environment as specified by the cellposeEnv string, download and
-			 * install the dependencies. This can take a few minutes, but it is
-			 * only done once. The next time the code is run, Appose will just
-			 * reuse the existing environment, so it will start much faster.
+			 * environment as specified by the Env string, download and install
+			 * the dependencies. This can take a few minutes, but it is only
+			 * done once. The next time the code is run, Appose will just reuse
+			 * the existing environment, so it will start much faster.
 			 */
 			final Environment env = Appose
 					.uv()
 					.name( envName() )
-					.include( "scikit-image" )
+					.include( "numpy" )
 					.include( "appose" )
 					.subscribeProgress( apposeLogger.progressLogger() )
 					.subscribeOutput( apposeLogger.infoLogger() )
@@ -224,8 +223,8 @@ public class MyIcyPlugin extends PluginActionable
 
 	private static String envName()
 	{
-		final String javaPackage = "plugins.tinevez.appose.cellpose";
-		final String envNickname = "cellpose3";
+		final String javaPackage = "plugins.tinevez.appose";
+		final String envNickname = "demo";
 		final String envVersion = "0.1";
 		final String envSuffix = "icy";
 
