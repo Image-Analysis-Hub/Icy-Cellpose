@@ -6,10 +6,28 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apposed.appose.Builder.ProgressConsumer;
 import org.bioimageanalysis.icy.gui.frame.progress.ProgressFrame;
-import org.bioimageanalysis.icy.system.logging.IcyLogger;
 
 public class ApposeUtils
 {
+
+	/**
+	 * Utility method to load an Appose script template from resources.
+	 *
+	 * @param resourcePath
+	 *            the resource path.
+	 * @return the script template.
+	 */
+	public static String loadScript( final String resourcePath )
+	{
+		try
+		{
+			return new String( ApposeUtils.class.getResourceAsStream( resourcePath ).readAllBytes() );
+		}
+		catch ( final Exception e )
+		{
+			throw new RuntimeException( "Failed to load Appose script template from resources: " + resourcePath, e );
+		}
+	}
 
 	public static IcyApposeLogger apposeLogger( final Class< ? > callerKlass )
 	{
@@ -20,15 +38,12 @@ public class ApposeUtils
 	{
 		private final ProgressFrame pf;
 
-		private final Class< ? > klass;
-
 		private final ProgressConsumer progressConsumer;
 
 		private final Logger logger;
 
 		public IcyApposeLogger( final Class< ? > klass )
 		{
-			this.klass = klass;
 			this.pf = new ProgressFrame( klass.getSimpleName() );
 			this.progressConsumer = ( title, current, maximum ) -> {
 				pf.setMessage( title );
@@ -39,7 +54,8 @@ public class ApposeUtils
 
 		public void logInfo( final String msg )
 		{
-			IcyLogger.info( klass, msg );
+//			IcyLogger.info( klass, msg );
+			System.out.println( msg ); // DEBUG
 		}
 
 		public void logError( final String msg )
