@@ -95,8 +95,7 @@ public class MyIcyPlugin extends PluginActionable
 			}
 
 			@SuppressWarnings( "rawtypes" )
-			final
-			Img img = ImgLib2IcyFunctions.wrap( sequence );
+			final Img img = ImgLib2IcyFunctions.wrap( sequence );
 			try
 			{
 				process( img );
@@ -177,9 +176,7 @@ public class MyIcyPlugin extends PluginActionable
 
 			// Verify that it worked.
 			if ( task.status != TaskStatus.COMPLETE )
-			{
-				throw new RuntimeException( "Python script failed with error: " + task.error );
-			}
+			{ throw new RuntimeException( "Python script failed with error: " + task.error ); }
 
 			// Benchmark.
 			final long end = System.currentTimeMillis();
@@ -315,9 +312,9 @@ public class MyIcyPlugin extends PluginActionable
 	 * do this.
 	 */
 
-	private JDialog progressDialog;
+	private volatile JDialog progressDialog;
 
-	private JProgressBar progressBar;
+	private volatile JProgressBar progressBar;
 
 	private void showProgress( final String msg )
 	{
@@ -367,8 +364,11 @@ public class MyIcyPlugin extends PluginActionable
 	private void hideProgress()
 	{
 		EventQueue.invokeLater( () -> {
-			progressDialog.dispose();
-			progressDialog = null;
+			if ( progressDialog != null )
+			{
+				progressDialog.dispose();
+				progressDialog = null;
+			}
 		} );
 	}
 
