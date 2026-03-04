@@ -18,17 +18,12 @@
 
 package plugins.tinevez;
 
-import java.awt.EventQueue;
-import java.awt.Font;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
 
+import org.apache.groovy.json.FastStringService;
 import org.apposed.appose.Appose;
 import org.apposed.appose.BuildException;
 import org.apposed.appose.Environment;
@@ -36,7 +31,6 @@ import org.apposed.appose.NDArray;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 import org.apposed.appose.Service.TaskStatus;
-import org.bioimageanalysis.icy.Icy;
 import org.bioimageanalysis.icy.extension.plugin.abstract_.PluginActionable;
 import org.bioimageanalysis.icy.gui.dialog.MessageDialog;
 import org.bioimageanalysis.icy.gui.viewer.Viewer;
@@ -45,23 +39,14 @@ import org.bioimageanalysis.icy.system.logging.IcyLogger;
 import org.bioimageanalysis.icy.system.thread.ThreadUtil;
 
 import net.imglib2.appose.NDArrays;
-import net.imglib2.appose.ShmImg;
 import net.imglib2.img.Img;
+import net.imglib2.img.planar.PlanarImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.ImgUtil;
+import plugins.tinevez.ApposeUtils.IcyApposeLogger;
 import plugins.tinevez.imglib2icy.ImgLib2IcyFunctions;
 
-/**
- * A simple plugin demonstration.
- * <p>
- * If a class extends {@link PluginActionable} it will be visible in Icy and
- * executable from the push of a button.
- * <p>
- * This is toy that shows how to make a plugin that can be launched from Icy and
- * that will MODIFY an image.
- *
- * @author Jean-Yves Tinevez
- */
 public class MyIcyPlugin extends PluginActionable
 {
 
@@ -102,126 +87,146 @@ public class MyIcyPlugin extends PluginActionable
 			}
 			catch ( final BuildException e )
 			{
-				e.printStackTrace();
+				IcyLogger.error( getClass(), "Failed to build Appose environment: " + e.getMessage() );
 			}
 		} );
-
 	}
 
 	private < T extends RealType< T > & NativeType< T > > void process( final Img< T > img ) throws BuildException
 	{
 		/*
-		 * Copy the image into a shared memory image and wrap it into an
-		 * NDArray, then store it in an input map that we will pass to the
-		 * Python script.
-		 * 
-		 * Note that we could have passed multiple inputs to the Python script
-		 * by putting more entries in the input map, and they would all be
-		 * available in the Python script as shared memory NDArrays.
-		 * 
-		 * A ND array is a multi-dimensional array that is stored in shared
-		 * memory, that can be unwrapped as a NumPy array in Python, and wrapped
-		 * as a ImgLib2 image in Java.
-		 * 
+		 * Required to avoid a Groovy classloader issue that can happen in some
+		 * environments. This is a temporary workaround until we have a better
+		 * solution for this in Appose. Basically, Groovy uses a service loader
+		 * to load the FastStringService class, and it uses the context class
+		 * loader of the current thread to do this. In some environments, this
+		 * context class loader does not have access to the FastStringService
+		 * class, which causes a ClassNotFoundException. By setting the context
+		 * class loader to the class loader that loaded the FastStringService
+		 * class, we ensure that Groovy can find it and load it properly.
 		 */
-		final Map< String, Object > inputs = new HashMap<>();
-		inputs.put( "image", NDArrays.asNDArray( img ) );
+		Thread.currentThread().setContextClassLoader( FastStringService.class.getClassLoader() );
 
 		/*
-		 * Create or retrieve the environment.
-		 * 
-		 * The first time this code is run, Appose will create the mamba
-		 * environment as specified by the cellposeEnv string, download and
-		 * install the dependencies. This can take a few minutes, but it is only
-		 * done once. The next time the code is run, Appose will just reuse the
-		 * existing environment, so it will start much faster.
+		 * Let's create a nice progress dialog for our plugin, that integrates
+		 * well with the Icy UI.
 		 */
-		final Environment env = Appose
-				.mamba()
-				.content( mambaEnv() )
-				.subscribeProgress( this::showProgress )
-				.subscribeOutput( this::showProgress )
-				.subscribeError( System.err::println )
-				.build();
-		hideProgress();
-
-		/*
-		 * Using this environment, we create a service that will run the Python
-		 * script.
-		 */
-		try (Service python = env.python())
+		try (final IcyApposeLogger apposeLogger = ApposeUtils.apposeLogger( getClass() );)
 		{
 			/*
-			 * With this service, we can now create a task that will run the
-			 * Python script with the specified inputs. This command takes the
-			 * script as first argument, and a map of inputs as second argument.
-			 * The keys of the map will be the variable names in the Python
-			 * script, and the values are the data that will be passed to
-			 * Python.
-			 */
-			final Task task = python.task( getScript(), inputs );
-
-			// Start the script, and return to Java immediately.
-			System.out.println( "Starting task" );
-			final long start = System.currentTimeMillis();
-			task.start();
-
-			/*
-			 * Wait for the script to finish. This will block the Java thread
-			 * until the Python script is done, but it allows the Python code to
-			 * run in parallel without blocking the Java thread while it is
-			 * running.
-			 */
-			task.waitFor();
-
-			// Verify that it worked.
-			if ( task.status != TaskStatus.COMPLETE )
-			{ throw new RuntimeException( "Python script failed with error: " + task.error ); }
-
-			// Benchmark.
-			final long end = System.currentTimeMillis();
-			System.out.println( "Task finished in " + ( end - start ) / 1000. + " s" );
-
-			/*
-			 * Unwrap output.
+			 * Copy the image into a shared memory image and wrap it into an
+			 * NDArray, then store it in an input map that we will pass to the
+			 * Python script.
 			 * 
-			 * In the Python script (see below), we create a new NDArray called
-			 * 'rotated' that contains the result of the processing. Here we
-			 * retrieve this NDArray from the task outputs, and wrap it into a
-			 * ShmImg, which is an ImgLib2 image that is backed by shared
-			 * memory. We can then display this image with
-			 * ImageJFunctions.show(). Note that this does not involve any
-			 * copying of the data, as the NDArray and the ShmImg are both just
-			 * views on the same shared memory array.
+			 * Note that we could have passed multiple inputs to the Python
+			 * script by putting more entries in the input map, and they would
+			 * all be available in the Python script as shared memory NDArrays.
+			 * 
+			 * A ND array is a multi-dimensional array that is stored in shared
+			 * memory, that can be unwrapped as a NumPy array in Python, and
+			 * wrapped as a ImgLib2 image in Java.
+			 * 
 			 */
-			final NDArray maskArr = ( NDArray ) task.outputs.get( "rotated" );
-			final Img< T > output = new ShmImg<>( maskArr );
+			final Map< String, Object > inputs = new HashMap<>();
+			final NDArray ndArray = NDArrays.asNDArray( img );
+			inputs.put( "image", ndArray );
 
-			final Sequence outSequence = ImgLib2IcyFunctions.wrap( output );
-			// Display the images.
-			SwingUtilities.invokeAndWait( () -> new Viewer( outSequence ) );
-			// Et voilà!
+			/*
+			 * Create or retrieve the environment.
+			 * 
+			 * The first time this code is run, Appose will create the mamba
+			 * environment as specified by the cellposeEnv string, download and
+			 * install the dependencies. This can take a few minutes, but it is
+			 * only done once. The next time the code is run, Appose will just
+			 * reuse the existing environment, so it will start much faster.
+			 */
+			final Environment env = Appose
+					.uv()
+					.name( envName() )
+					.include( "scikit-image" )
+					.include( "appose" )
+					.subscribeProgress( apposeLogger.progressLogger() )
+					.subscribeOutput( apposeLogger.infoLogger() )
+					.subscribeError( apposeLogger.errorLogger() )
+					.build();
 
+			/*
+			 * Using this environment, we create a service that will run the
+			 * Python script.
+			 */
+			try (final Service python = env.python())
+			{
+				/*
+				 * With this service, we can now create a task that will run the
+				 * Python script with the specified inputs. This command takes
+				 * the script as first argument, and a map of inputs as second
+				 * argument. The keys of the map will be the variable names in
+				 * the Python script, and the values are the data that will be
+				 * passed to Python.
+				 */
+				final Task task = python.task( getScript(), inputs );
+				task.listen( e -> apposeLogger.logInfo( e.message ) );
+
+				// Start the script, and return to Java immediately.
+				apposeLogger.logInfo( "Starting task" );
+				final long start = System.currentTimeMillis();
+				task.start();
+				apposeLogger.logInfo( "Task started" );
+
+				/*
+				 * Wait for the script to finish. This will block the Java
+				 * thread until the Python script is done, but it allows the
+				 * Python code to run in parallel without blocking the Java
+				 * thread while it is running.
+				 */
+				task.waitFor();
+				apposeLogger.logInfo( "Task finished with status: " + task.status );
+
+				// Verify that it worked.
+				if ( task.status != TaskStatus.COMPLETE )
+				{
+					apposeLogger.logError( "Python script failed with error: " + task.error );
+					return;
+				}
+
+				// Benchmark.
+				final long end = System.currentTimeMillis();
+				apposeLogger.logInfo( "Task finished in " + ( end - start ) / 1000. + " s" );
+
+				/*
+				 * Unwrap output.
+				 * 
+				 * In the Python script (see below), we create a new NDArray
+				 * called 'rotated' that contains the result of the processing.
+				 * Here we retrieve this NDArray from the task outputs, and wrap
+				 * it into a ShmImg, which is an ImgLib2 image that is backed by
+				 * shared memory. We can then display this image with
+				 * ImageJFunctions.show(). Note that this does not involve any
+				 * copying of the data, as the NDArray and the ShmImg are both
+				 * just views on the same shared memory array.
+				 */
+				final NDArray maskArr = ( NDArray ) task.outputs.get( "rotated" );
+				apposeLogger.logInfo( "Received output from Python: " + maskArr );
+				final Img< T > output = NDArrays.asArrayImg( maskArr );
+				final Img< T > copy = new PlanarImgFactory<>( output.getType() ).create( output.dimensionsAsLongArray() );
+				ImgUtil.copy( output, copy );
+				final Sequence outSequence = ImgLib2IcyFunctions.wrap( copy );
+				// Display the images.
+				SwingUtilities.invokeAndWait( () -> new Viewer( outSequence ) );
+				// Et voilà!
+			}
+			catch ( final Exception e )
+			{
+				apposeLogger.logError( e.getMessage() );
+			}
 		}
-		catch ( final Exception e )
+		catch ( final Exception e1 )
 		{
-			IcyLogger.error( getClass(), e );
+			IcyLogger.error( getClass(), "Failed to create Appose logger: " + e1.getMessage() );
 		}
 	}
 
-	/*
-	 * The environment specification.
-	 * 
-	 * This is a YAML specification of a mamba environment, that specifies the
-	 * dependencies that we need in Python to run our script. In this case we
-	 * need scikit-image for the rotation, and appose to be able to receive the
-	 * input and send the output back to Fiji. Note that we specify appose as a
-	 * pip dependency, as it is not available on conda-forge.
-	 * 
-	 * Most likely in your scripts the dependencies will be different, but you
-	 * will always need appose.
-	 */
-	private static String mambaEnv()
+	private static String envName()
 	{
 		final String javaPackage = "plugins.tinevez.appose.cellpose";
 		final String envNickname = "cellpose3";
@@ -233,17 +238,7 @@ public class MyIcyPlugin extends PluginActionable
 				envNickname.replace( '.', '_' ),
 				envVersion.replace( '.', '_' ),
 				envSuffix.replace( '.', '_' ) );
-
-		return "name: " + envName + "\n"
-				+ "channels:\n"
-				+ "  - conda-forge\n"
-				+ "dependencies:\n"
-				+ "  - python=3.10\n"
-				+ "  - pip\n"
-				+ "  - scikit-image\n"
-				+ "  - pip:\n"
-				+ "    - numpy\n"
-				+ "    - appose\n";
+		return envName;
 	}
 
 	/*
@@ -277,20 +272,26 @@ public class MyIcyPlugin extends PluginActionable
 	private static String getScript()
 	{
 		return ""
-				+ "from skimage.transform import rotate\n"
+				+ "import numpy as np\n"
 				+ "import appose\n"
 				+ "\n"
+				+ "task.update('Hello from Python!')\n"
 				+ "# The variable 'image' is automatically created by Appose from the \n"
 				+ "# input map that we passed when creating the task. It is a shared \n"
 				+ "# memory NDArray that can be unwrapped as a NumPy array.\n"
 				+ "# Careful: the variable name 'image' MUST be the key that we used in \n"
 				+ "# the input map in Java.\n"
+				+ "task.update('Received image:' + str(image) )\n"
 				+ "img = image.ndarray()\n"
+				+ "task.update('Image shape:' + str(img.shape) )\n"
+				+ "task.update('Image dtype:' + str(img.dtype) )\n"
 				+ "\n"
 				+ "# Now we have 'img' as a NumPy array.\n"
 				+ "\n"
 				+ "# Rotate the image by 90 degrees (counter-clockwise)\n"
-				+ "rotated_image = rotate(img, angle=90, resize=True)\n"
+				+ "rotated_image = np.rot90(img, k=1, axes=(-2, -1))\n"
+				+ "task.update('Rotated image shape:' + str(rotated_image.shape) )\n"
+				+ "task.update('Rotated image dtype:' + str(rotated_image.dtype) )\n"
 				+ "\n"
 				+ "# Output back to Fiji\n"
 				+ "# First we create a NDArray placeholder, of the same type and shape as \n"
@@ -298,82 +299,11 @@ public class MyIcyPlugin extends PluginActionable
 				+ "shared = appose.NDArray(str(rotated_image.dtype), rotated_image.shape)\n"
 				+ "\n"
 				+ "# Then we fill this placeholder with the data that we want to return.\n"
-				+ "shared.ndarray()[:] = rotated_image[:]\n"
+				+ "shared.ndarray()[:] = rotated_image\n"
 				+ "\n"
 				+ "# Finally, we put this NDArray in the task outputs with a specific key (here 'rotated'), \n"
 				+ "# so that it can be retrieved from Java after the script is done. The key 'rotated' is \n"
 				+ "# arbitrary, but it must be the same as the one we use in Java to retrieve the output.\n"
 				+ "task.outputs['rotated'] = shared\n";
-	}
-
-	/*
-	 * Helper functions to display progress while building the Appose
-	 * environment. Temporary solution until Appose has a nicer built-in way to
-	 * do this.
-	 */
-
-	private volatile JDialog progressDialog;
-
-	private volatile JProgressBar progressBar;
-
-	private void showProgress( final String msg )
-	{
-		showProgress( msg, null, null );
-	}
-
-	private void showProgress( final String msg, final Long cur, final Long max )
-	{
-		EventQueue.invokeLater( () -> {
-			if ( progressDialog == null )
-			{
-				final JFrame owner = Icy.getMainInterface().getMainFrame();
-				progressDialog = new JDialog( owner, "Icy ♥ Appose" );
-				progressDialog.setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
-				progressBar = new JProgressBar();
-				progressDialog.getContentPane().add( progressBar );
-				progressBar.setFont( new Font( "Courier", Font.PLAIN, 14 ) );
-				progressBar.setString(
-						"--------------------==================== " +
-								"Building Python environment " +
-								"====================--------------------" );
-				progressBar.setStringPainted( true );
-				progressBar.setIndeterminate( true );
-				progressDialog.pack();
-				progressDialog.setLocationRelativeTo( owner );
-				progressDialog.setVisible( true );
-			}
-			if ( msg != null && !msg.trim().isEmpty() )
-			{
-				progressBar.setString( "Building Python environment: " + msg.trim() );
-			}
-			if ( cur != null || max != null )
-			{
-				progressBar.setIndeterminate( false );
-			}
-			if ( max != null )
-			{
-				progressBar.setMaximum( max.intValue() );
-			}
-			if ( cur != null )
-			{
-				progressBar.setValue( cur.intValue() );
-			}
-		} );
-	}
-
-	private void hideProgress()
-	{
-		EventQueue.invokeLater( () -> {
-			if ( progressDialog != null )
-			{
-				progressDialog.dispose();
-				progressDialog = null;
-			}
-		} );
-	}
-
-	public static void main( final String[] args )
-	{
-		Icy.main( args );
 	}
 }
