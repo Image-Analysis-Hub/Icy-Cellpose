@@ -25,7 +25,6 @@ import javax.swing.SwingUtilities;
 
 import org.apache.groovy.json.FastStringService;
 import org.apposed.appose.Appose;
-import org.apposed.appose.BuildException;
 import org.apposed.appose.Environment;
 import org.apposed.appose.NDArray;
 import org.apposed.appose.Service;
@@ -40,10 +39,8 @@ import org.bioimageanalysis.icy.system.thread.ThreadUtil;
 
 import net.imglib2.appose.NDArrays;
 import net.imglib2.img.Img;
-import net.imglib2.img.planar.PlanarImgFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.ImgUtil;
 import plugins.tinevez.ApposeUtils.IcyApposeLogger;
 import plugins.tinevez.imglib2icy.ImgLib2IcyFunctions;
 
@@ -53,7 +50,6 @@ public class MyIcyPlugin extends PluginActionable
 	/*
 	 * The run() method is called when the user presses the plugin button.
 	 */
-	@SuppressWarnings( "unchecked" )
 	@Override
 	public void run()
 	{
@@ -71,28 +67,43 @@ public class MyIcyPlugin extends PluginActionable
 			 */
 
 			final Sequence sequence = getActiveSequence();
-
-			// Check if a sequence is opened.
 			if ( sequence == null )
 			{
 				MessageDialog.showDialog( "This plugin needs an opened sequence." );
 				return;
 			}
-
-			@SuppressWarnings( "rawtypes" )
-			final Img img = ImgLib2IcyFunctions.wrap( sequence );
 			try
 			{
-				process( img );
+				final Sequence output = process( sequence );
+				SwingUtilities.invokeAndWait( () -> new Viewer( output ) );
 			}
-			catch ( final BuildException e )
+			catch ( final Exception e )
 			{
-				IcyLogger.error( getClass(), "Failed to build Appose environment: " + e.getMessage() );
+				IcyLogger.warn( getClass(), e );
 			}
 		} );
 	}
 
-	private < T extends RealType< T > & NativeType< T > > void process( final Img< T > img ) throws BuildException
+	public Sequence process( final Sequence sequence ) throws Exception
+	{
+		@SuppressWarnings( "rawtypes" )
+		final Img img = ImgLib2IcyFunctions.wrap( sequence );
+		@SuppressWarnings( { "unchecked", "rawtypes" } )
+		final Img out = process( img );
+		@SuppressWarnings( "unchecked" )
+		final Sequence output = ImgLib2IcyFunctions.wrap( out );
+
+		output.setName( "Cellpose output - " + sequence.getName() );
+		output.setChannelName( 0, "Cellpose labels" );
+		output.setPixelSizeX( sequence.getPixelSizeX() );
+		output.setPixelSizeY( sequence.getPixelSizeY() );
+		output.setPixelSizeZ( sequence.getPixelSizeZ() );
+		output.setTimeInterval( sequence.getTimeInterval() );
+
+		return output;
+	}
+
+	private < T extends RealType< T > & NativeType< T > > Img< T > process( final Img< T > img ) throws Exception
 	{
 		/*
 		 * Required to avoid a Groovy classloader issue that can happen in some
@@ -184,10 +195,7 @@ public class MyIcyPlugin extends PluginActionable
 
 				// Verify that it worked.
 				if ( task.status != TaskStatus.COMPLETE )
-				{
-					apposeLogger.logError( "Python script failed with error: " + task.error );
-					return;
-				}
+					throw new RuntimeException( "Python script failed with status: " + task.status );
 
 				// Benchmark.
 				final long end = System.currentTimeMillis();
@@ -208,21 +216,8 @@ public class MyIcyPlugin extends PluginActionable
 				final NDArray maskArr = ( NDArray ) task.outputs.get( "rotated" );
 				apposeLogger.logInfo( "Received output from Python: " + maskArr );
 				final Img< T > output = NDArrays.asArrayImg( maskArr );
-				final Img< T > copy = new PlanarImgFactory<>( output.getType() ).create( output.dimensionsAsLongArray() );
-				ImgUtil.copy( output, copy );
-				final Sequence outSequence = ImgLib2IcyFunctions.wrap( copy );
-				// Display the images.
-				SwingUtilities.invokeAndWait( () -> new Viewer( outSequence ) );
-				// Et voilà!
+				return output;
 			}
-			catch ( final Exception e )
-			{
-				apposeLogger.logError( e.getMessage() );
-			}
-		}
-		catch ( final Exception e1 )
-		{
-			IcyLogger.error( getClass(), "Failed to create Appose logger: " + e1.getMessage() );
 		}
 	}
 
