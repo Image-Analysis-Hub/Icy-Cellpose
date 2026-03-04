@@ -10,9 +10,31 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apposed.appose.Builder.ProgressConsumer;
 import org.bioimageanalysis.icy.gui.frame.progress.ProgressFrame;
+import org.bioimageanalysis.icy.model.sequence.Sequence;
 
 public class ApposeUtils
 {
+
+	private static long[] getDims( final Sequence sequence )
+	{
+		final int sizeX = sequence.getSizeX();
+		final int sizeY = sequence.getSizeY();
+		final int sizeC = sequence.getSizeC();
+		final int sizeZ = sequence.getSizeZ();
+		final int sizeT = sequence.getSizeT();
+		return new long[] { sizeX, sizeY, sizeC, sizeZ, sizeT };
+	}
+
+	public static String getDimensionality( final Sequence sequence )
+	{
+		final long[] dims = getDims( sequence );
+		final String start = "XYCZT"; // Always like this in Icy.
+		final StringBuilder sb = new StringBuilder();
+		for ( int i = 0; i < dims.length; i++ )
+			if ( dims[ i ] > 1 )
+				sb.append( start.charAt( i ) );
+		return sb.toString();
+	}
 
 	/**
 	 * Utility method to load a Pixi environment from resources.
