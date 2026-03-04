@@ -1,8 +1,14 @@
 package plugins.tinevez.appose;
 
+import java.awt.Color;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import org.apache.commons.io.IOUtils;
@@ -11,9 +17,54 @@ import org.apache.logging.log4j.Logger;
 import org.apposed.appose.Builder.ProgressConsumer;
 import org.bioimageanalysis.icy.gui.frame.progress.ProgressFrame;
 import org.bioimageanalysis.icy.model.sequence.Sequence;
+import org.bioimageanalysis.icy.system.logging.IcyLogger;
 
 public class ApposeUtils
 {
+
+	private static List< Color > loadLutFromResource( final String resourcePath )
+	{
+		final List< Color > colors = new ArrayList<>( 256 );
+		try (InputStream is = ApposeUtils.class.getResourceAsStream( resourcePath );
+				BufferedReader reader = new BufferedReader( new InputStreamReader( is ) ))
+		{
+
+			if ( is == null )
+			{
+				IcyLogger.error( ApposeUtils.class, "LUT resource not found: " + resourcePath );
+				return null;
+			}
+
+			String line;
+			while ( ( line = reader.readLine() ) != null )
+			{
+				line = line.trim();
+				if ( line.isEmpty() )
+					continue; // Skip empty lines
+
+				// Split by whitespace
+				final String[] parts = line.split( "\\s+" );
+				if ( parts.length >= 3 )
+				{
+					final byte r = ( byte ) Integer.parseInt( parts[ 0 ] );
+					final byte g = ( byte ) Integer.parseInt( parts[ 1 ] );
+					final byte b = ( byte ) Integer.parseInt( parts[ 2 ] );
+					final Color color = new Color( r & 0xFF, g & 0xFF, b & 0xFF );
+					colors.add( color );
+				}
+			}
+		}
+		catch ( final IOException e )
+		{
+			IcyLogger.error( ApposeUtils.class, "Error reading LUT resource: " + resourcePath );
+		}
+		return colors;
+	}
+
+	public static final List< Color > getGlasbeyDarkLUT()
+	{
+		return loadLutFromResource( "/glasbey_on_dark.lut" );
+	}
 
 	private static long[] getDims( final Sequence sequence )
 	{
