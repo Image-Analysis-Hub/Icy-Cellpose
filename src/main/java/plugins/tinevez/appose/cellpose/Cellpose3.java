@@ -69,7 +69,7 @@ import plugins.tinevez.imglib2icy.VirtualSequence.DimensionArrangement;
 public class Cellpose3 extends EzPlug
 {
 
-	private static final String CELLPOSE_ROI_NAME_PREFIX = "Cellpose3Roi_";
+	static final String CELLPOSE_ROI_NAME_PREFIX = "Cellpose3Roi_";
 
 	protected static int resultID = 1;
 
@@ -186,27 +186,12 @@ public class Cellpose3 extends EzPlug
 
 			if ( ezExportROI.getValue() )
 			{
-				for ( final ROI roi : sequence.getROIs() )
-					if ( roi.getName().startsWith( CELLPOSE_ROI_NAME_PREFIX ) )
-						sequence.removeROI( roi, false );
-
-				final List< ROI > rois = LabelExtractor.extractLabels( output, ExtractionType.ALL_LABELS_VS_BACKGROUND, 0 );
-				final List< Color > colors = getGlasbeyDarkColors();
-				final int nRois = rois.size();
-				// How many digits for the number of ROIs?
-				final int nDigits = nRois > 0 ? ( int ) Math.ceil( Math.log10( nRois ) ) : 1;
-				final String format = CELLPOSE_ROI_NAME_PREFIX + "%0" + nDigits + "d";
-				for ( int i = 0; i < rois.size(); i++ )
-				{
-					final ROI roi = rois.get( i );
-					final Color color = colors.get( i % colors.size() );
-					roi.setColor( color );
-					roi.setName( String.format( format, i ) );
-				}
+				cleanOldRois( sequence );
+				final List< ROI > rois = extractRois( output );
 				sequence.addROIs( rois, true );
 
 				if ( getUI() != null )
-					nbObjects.setText( nRois + " objects detected" );
+					nbObjects.setText( rois.size() + " objects detected" );
 			}
 
 			if ( ezExportSequence.getValue() || outputSequence.isReferenced() )
@@ -312,6 +297,31 @@ public class Cellpose3 extends EzPlug
 			final Img< T > output = NDArrays.asArrayImg( maskArr );
 			return output;
 		}
+	}
+
+	static void cleanOldRois( final Sequence input )
+	{
+		for ( final ROI roi : input.getROIs() )
+			if ( roi.getName().startsWith( CELLPOSE_ROI_NAME_PREFIX ) )
+				input.removeROI( roi, false );
+	}
+
+	static List< ROI > extractRois( final Sequence output )
+	{
+		final List< ROI > rois = LabelExtractor.extractLabels( output, ExtractionType.ALL_LABELS_VS_BACKGROUND, 0 );
+		final List< Color > colors = getGlasbeyDarkColors();
+		final int nRois = rois.size();
+		// How many digits for the number of ROIs?
+		final int nDigits = nRois > 0 ? ( int ) Math.ceil( Math.log10( nRois ) ) : 1;
+		final String format = CELLPOSE_ROI_NAME_PREFIX + "%0" + nDigits + "d";
+		for ( int i = 0; i < rois.size(); i++ )
+		{
+			final ROI roi = rois.get( i );
+			final Color color = colors.get( i % colors.size() );
+			roi.setColor( color );
+			roi.setName( String.format( format, i ) );
+		}
+		return rois;
 	}
 
 	private static String getScript( final Cellpose3Parameters parameters )
