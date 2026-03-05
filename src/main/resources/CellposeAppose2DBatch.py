@@ -25,8 +25,8 @@ def process(img, axes):
     # Run Cellpose on each timepoint
     if 'C' in axes:
         caxis = axes['C']
-        caxis_flipped = len(axes) - 1 - caxis
-        out = model.eval(img, diameter=${--diameter}, channels=[${--chan},${--chan2}], channel_axis=caxis_flipped, progress=True)
+        task.update(f"Using channel axis: {caxis}")
+        out = model.eval(img, diameter=${--diameter}, channels=[${--chan},${--chan2}], channel_axis=caxis, progress=True)
     else:
         out = model.eval(img, diameter=${--diameter}, channels=[${--chan},${--chan2}], progress=True)	
     masks = out[0]
