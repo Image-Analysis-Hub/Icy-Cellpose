@@ -54,6 +54,7 @@ import plugins.adufour.roi.LabelExtractor;
 import plugins.adufour.roi.LabelExtractor.ExtractionType;
 import plugins.tinevez.appose.ApposeUtils.IcyApposeLogger;
 import plugins.tinevez.imglib2icy.ImgLib2IcyFunctions;
+import plugins.tinevez.imglib2icy.VirtualSequence.DimensionArrangement;
 
 public class Cellpose extends PluginActionable
 {
@@ -75,11 +76,16 @@ public class Cellpose extends PluginActionable
 
 				final List< ROI > rois = LabelExtractor.extractLabels( output, ExtractionType.ALL_LABELS_VS_BACKGROUND, 0 );
 				final List< Color > colors = getGlasbeyDarkLUT();
+				// How many digits for the number of ROIs?
+				final int nRois = rois.size();
+				final int nDigits = nRois > 0 ? ( int ) Math.ceil( Math.log10( nRois ) ) : 1;
+				final String format = "CellposeRoi_%0" + nDigits + "d";
 				for ( int i = 0; i < rois.size(); i++ )
 				{
 					final ROI roi = rois.get( i );
 					final Color color = colors.get( i % colors.size() );
 					roi.setColor( color );
+					roi.setName( String.format( format, i ) );
 				}
 				sequence.removeAllROI( true );
 				sequence.addROIs( rois, true );
@@ -100,8 +106,11 @@ public class Cellpose extends PluginActionable
 		final String dimensionality = getDimensionality( sequence );
 		@SuppressWarnings( { "unchecked", "rawtypes" } )
 		final Img out = process( img, dimensionality );
+
+		final DimensionArrangement inputDims = ImgLib2IcyFunctions.getDimensionArrangement( sequence );
+		final DimensionArrangement outputDims = inputDims.dropC();
 		@SuppressWarnings( "unchecked" )
-		final Sequence output = ImgLib2IcyFunctions.wrap( out );
+		final Sequence output = ImgLib2IcyFunctions.wrap( out, outputDims );
 
 		output.setName( "Cellpose output - " + sequence.getName() );
 		output.setChannelName( 0, "Cellpose labels" );
@@ -109,6 +118,7 @@ public class Cellpose extends PluginActionable
 		output.setPixelSizeY( sequence.getPixelSizeY() );
 		output.setPixelSizeZ( sequence.getPixelSizeZ() );
 		output.setTimeInterval( sequence.getTimeInterval() );
+
 
 		return output;
 	}
