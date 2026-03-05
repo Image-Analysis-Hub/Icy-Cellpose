@@ -142,7 +142,29 @@ public class ApposeUtils
 		return new IcyApposeEzLogger( status );
 	}
 
-	public static class IcyApposeLogger implements AutoCloseable
+	public static interface ApposeLogger extends AutoCloseable
+	{
+
+		void logInfo( String msg );
+
+		Consumer< String > errorLogger();
+
+		Consumer< String > infoLogger();
+
+		ProgressConsumer progressLogger();
+
+		void logProgress( String title, long current, long maximum );
+
+		void logError( String msg );
+
+		@Override
+		default void close() throws Exception
+		{
+			// Default implementation does nothing, override if needed.
+		}
+	}
+
+	public static class IcyApposeLogger implements ApposeLogger
 	{
 		private final ProgressFrame pf;
 
@@ -160,32 +182,38 @@ public class ApposeUtils
 			this.logger = LogManager.getLogger( klass );
 		}
 
+		@Override
 		public void logInfo( final String msg )
 		{
 //			IcyLogger.info( klass, msg );
 			System.out.println( msg ); // DEBUG
 		}
 
+		@Override
 		public void logError( final String msg )
 		{
 			logger.error( msg );
 		}
 
+		@Override
 		public void logProgress( final String title, final long current, final long maximum )
 		{
 			progressConsumer.accept( title, current, maximum );
 		}
 
+		@Override
 		public ProgressConsumer progressLogger()
 		{
 			return progressConsumer;
 		}
 
+		@Override
 		public Consumer< String > infoLogger()
 		{
 			return this::logInfo;
 		}
 
+		@Override
 		public Consumer< String > errorLogger()
 		{
 			return this::logError;
@@ -198,7 +226,7 @@ public class ApposeUtils
 		}
 	}
 
-	public static class IcyApposeEzLogger
+	public static class IcyApposeEzLogger implements ApposeLogger
 	{
 		private final EzStatus status;
 
@@ -213,32 +241,38 @@ public class ApposeUtils
 			};
 		}
 
+		@Override
 		public void logInfo( final String msg )
 		{
 			if ( msg != null )
 				status.setMessage( msg );
 		}
 
+		@Override
 		public void logError( final String msg )
 		{
 			logInfo( msg );
 		}
 
+		@Override
 		public void logProgress( final String title, final long current, final long maximum )
 		{
 			progressConsumer.accept( title, current, maximum );
 		}
 
+		@Override
 		public ProgressConsumer progressLogger()
 		{
 			return progressConsumer;
 		}
 
+		@Override
 		public Consumer< String > infoLogger()
 		{
 			return this::logInfo;
 		}
 
+		@Override
 		public Consumer< String > errorLogger()
 		{
 			return this::logError;

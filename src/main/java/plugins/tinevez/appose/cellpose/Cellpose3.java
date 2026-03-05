@@ -60,7 +60,7 @@ import plugins.adufour.ezplug.EzVarSequence;
 import plugins.adufour.roi.LabelExtractor;
 import plugins.adufour.roi.LabelExtractor.ExtractionType;
 import plugins.adufour.vars.lang.VarSequence;
-import plugins.tinevez.appose.ApposeUtils.IcyApposeEzLogger;
+import plugins.tinevez.appose.ApposeUtils.ApposeLogger;
 import plugins.tinevez.imglib2icy.ImgLib2IcyFunctions;
 import plugins.tinevez.imglib2icy.VirtualSequence.DimensionArrangement;
 
@@ -181,7 +181,8 @@ public class Cellpose3 extends EzPlug
 	{
 		try
 		{
-			final Sequence output = process( sequence, parameters );
+			final ApposeLogger apposeLogger = apposeEzLogger( getStatus() );
+			final Sequence output = process( sequence, parameters, apposeLogger );
 
 			if ( ezExportROI.getValue() )
 			{
@@ -221,13 +222,16 @@ public class Cellpose3 extends EzPlug
 		}
 	}
 
-	public Sequence process( final Sequence input, final Cellpose3Parameters parameters ) throws Exception
+	public static Sequence process(
+			final Sequence input,
+			final Cellpose3Parameters parameters,
+			final ApposeLogger apposeLogger ) throws Exception
 	{
 		@SuppressWarnings( "rawtypes" )
 		final Img img = ImgLib2IcyFunctions.wrap( input );
 		final String dimensionality = getDimensionality( input );
 		@SuppressWarnings( { "unchecked", "rawtypes" } )
-		final Img out = process( img, dimensionality, parameters );
+		final Img out = process( img, dimensionality, parameters, apposeLogger );
 
 		final DimensionArrangement inputDims = ImgLib2IcyFunctions.getDimensionArrangement( input );
 		final DimensionArrangement outputDims = inputDims.dropC();
@@ -241,16 +245,19 @@ public class Cellpose3 extends EzPlug
 		output.setTimeInterval( input.getTimeInterval() );
 		output.setChannelName( 0, "Cellpose labels" );
 		output.setColormap( 0, getGlasbeyDarkColorMap(), true );
-		final String name = input.getName() + "_Cellpose" + ( isHeadLess() ? "" : ( "#" + resultID++ ) );
+		final String name = input.getName() + "_Cellpose#" + resultID++;
 		output.setName( name );
 
 		return output;
 	}
 
-	private < T extends RealType< T > & NativeType< T > > Img< T > process( final Img< T > img, final String dimensionality, final Cellpose3Parameters parameters ) throws Exception
+	private static < T extends RealType< T > & NativeType< T > > Img< T > process(
+			final Img< T > img,
+			final String dimensionality,
+			final Cellpose3Parameters parameters,
+			final ApposeLogger apposeLogger ) throws Exception
 	{
 		Thread.currentThread().setContextClassLoader( FastStringService.class.getClassLoader() );
-		final IcyApposeEzLogger apposeLogger = apposeEzLogger( getStatus() );
 
 		// Inputs.
 		final NDArray ndArray = NDArrays.asNDArray( img );
