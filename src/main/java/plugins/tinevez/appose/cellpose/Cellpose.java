@@ -20,7 +20,7 @@ package plugins.tinevez.appose.cellpose;
 
 import static plugins.tinevez.appose.ApposeUtils.apposeLogger;
 import static plugins.tinevez.appose.ApposeUtils.getDimensionality;
-import static plugins.tinevez.appose.ApposeUtils.getGlasbeyDarkLUT;
+import static plugins.tinevez.appose.ApposeUtils.getGlasbeyDarkColors;
 import static plugins.tinevez.appose.ApposeUtils.loadScript;
 import static plugins.tinevez.appose.ApposeUtils.pixiEnv;
 
@@ -75,7 +75,7 @@ public class Cellpose extends PluginActionable
 				final Sequence output = process( sequence );
 
 				final List< ROI > rois = LabelExtractor.extractLabels( output, ExtractionType.ALL_LABELS_VS_BACKGROUND, 0 );
-				final List< Color > colors = getGlasbeyDarkLUT();
+				final List< Color > colors = getGlasbeyDarkColors();
 				// How many digits for the number of ROIs?
 				final int nRois = rois.size();
 				final int nDigits = nRois > 0 ? ( int ) Math.ceil( Math.log10( nRois ) ) : 1;
@@ -118,7 +118,6 @@ public class Cellpose extends PluginActionable
 		output.setPixelSizeY( sequence.getPixelSizeY() );
 		output.setPixelSizeZ( sequence.getPixelSizeZ() );
 		output.setTimeInterval( sequence.getTimeInterval() );
-
 
 		return output;
 	}
@@ -186,8 +185,8 @@ public class Cellpose extends PluginActionable
 		catch ( final Exception e )
 		{
 			e.printStackTrace();
+			throw ( e );
 		}
-		return null;
 	}
 
 	private static String getScript()

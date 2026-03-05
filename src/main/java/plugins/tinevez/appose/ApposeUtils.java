@@ -16,13 +16,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apposed.appose.Builder.ProgressConsumer;
 import org.bioimageanalysis.icy.gui.frame.progress.ProgressFrame;
+import org.bioimageanalysis.icy.model.colormap.IcyColorMap;
 import org.bioimageanalysis.icy.model.sequence.Sequence;
 import org.bioimageanalysis.icy.system.logging.IcyLogger;
 
 public class ApposeUtils
 {
 
-	private static List< Color > loadLutFromResource( final String resourcePath )
+	private static List< Color > loadColorsFromResource( final String resourcePath )
 	{
 		final List< Color > colors = new ArrayList<>( 256 );
 		try (InputStream is = ApposeUtils.class.getResourceAsStream( resourcePath );
@@ -61,9 +62,9 @@ public class ApposeUtils
 		return colors;
 	}
 
-	public static final List< Color > getGlasbeyDarkLUT()
+	public static final List< Color > getGlasbeyDarkColors()
 	{
-		return loadLutFromResource( "/glasbey_on_dark.lut" );
+		return loadColorsFromResource( "/glasbey_on_dark.lut" );
 	}
 
 	private static long[] getDims( final Sequence sequence )
@@ -187,6 +188,41 @@ public class ApposeUtils
 		public void close() throws Exception
 		{
 			pf.close();
+		}
+	}
+
+	public static IcyColorMap getGlasbeyDarkColorMap()
+	{
+		return new GlasbeyDarkColoMap();
+	}
+
+	private static class GlasbeyDarkColoMap extends IcyColorMap
+	{
+
+		private int nColors;
+
+		public GlasbeyDarkColoMap()
+		{
+			super( "Glasbey on dark" );
+
+			final List< Color > colors = getGlasbeyDarkColors();
+			beginUpdate();
+			try
+			{
+				this.nColors = colors.size();
+				for ( int i = 0; i < nColors; i++ )
+					setRGB( i, colors.get( i ) );
+			}
+			finally
+			{
+				endUpdate();
+			}
+		}
+
+		@Override
+		public Color getColor( final int index )
+		{
+			return super.getColor( index % nColors );
 		}
 	}
 }
