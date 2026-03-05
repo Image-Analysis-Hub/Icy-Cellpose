@@ -39,6 +39,8 @@ import org.apposed.appose.NDArray;
 import org.apposed.appose.Service;
 import org.apposed.appose.Service.Task;
 import org.apposed.appose.Service.TaskStatus;
+import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginIcon;
+import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginName;
 import org.bioimageanalysis.icy.model.roi.ROI;
 import org.bioimageanalysis.icy.model.sequence.Sequence;
 import org.bioimageanalysis.icy.model.sequence.SequenceUtil;
@@ -62,6 +64,8 @@ import plugins.tinevez.appose.ApposeUtils.IcyApposeEzLogger;
 import plugins.tinevez.imglib2icy.ImgLib2IcyFunctions;
 import plugins.tinevez.imglib2icy.VirtualSequence.DimensionArrangement;
 
+@IcyPluginName( "Cellpose 3" )
+@IcyPluginIcon( value = "/cellpose_logo.png" )
 public class CellposeEzPlug extends EzPlug
 {
 
