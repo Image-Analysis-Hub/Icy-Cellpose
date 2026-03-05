@@ -20,6 +20,8 @@ import org.bioimageanalysis.icy.model.colormap.IcyColorMap;
 import org.bioimageanalysis.icy.model.sequence.Sequence;
 import org.bioimageanalysis.icy.system.logging.IcyLogger;
 
+import plugins.adufour.ezplug.EzStatus;
+
 public class ApposeUtils
 {
 
@@ -135,6 +137,11 @@ public class ApposeUtils
 		return new IcyApposeLogger( callerKlass );
 	}
 
+	public static IcyApposeEzLogger apposeEzLogger( final EzStatus status )
+	{
+		return new IcyApposeEzLogger( status );
+	}
+
 	public static class IcyApposeLogger implements AutoCloseable
 	{
 		private final ProgressFrame pf;
@@ -188,6 +195,53 @@ public class ApposeUtils
 		public void close() throws Exception
 		{
 			pf.close();
+		}
+	}
+
+	public static class IcyApposeEzLogger
+	{
+		private final EzStatus status;
+
+		private final ProgressConsumer progressConsumer;
+
+		public IcyApposeEzLogger( final EzStatus status )
+		{
+			this.status = status;
+			this.progressConsumer = ( title, current, maximum ) -> {
+				logInfo( title );
+				status.setCompletion( ( double ) current / maximum );
+			};
+		}
+
+		public void logInfo( final String msg )
+		{
+			if ( msg != null )
+				status.setMessage( msg );
+		}
+
+		public void logError( final String msg )
+		{
+			logInfo( msg );
+		}
+
+		public void logProgress( final String title, final long current, final long maximum )
+		{
+			progressConsumer.accept( title, current, maximum );
+		}
+
+		public ProgressConsumer progressLogger()
+		{
+			return progressConsumer;
+		}
+
+		public Consumer< String > infoLogger()
+		{
+			return this::logInfo;
+		}
+
+		public Consumer< String > errorLogger()
+		{
+			return this::logError;
 		}
 	}
 
