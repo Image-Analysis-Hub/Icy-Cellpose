@@ -66,7 +66,7 @@ import plugins.tinevez.imglib2icy.VirtualSequence.DimensionArrangement;
 
 @IcyPluginName( "Cellpose 3" )
 @IcyPluginIcon( value = "/cellpose_logo.png" )
-public class Cellpose3EzPlug extends EzPlug
+public class Cellpose3 extends EzPlug
 {
 
 	private static final String CELLPOSE_ROI_NAME_PREFIX = "Cellpose3Roi_";
@@ -93,7 +93,7 @@ public class Cellpose3EzPlug extends EzPlug
 
 	protected VarSequence outputSequence = new VarSequence( "cellpose output", null );
 
-	public Cellpose3EzPlug()
+	public Cellpose3()
 	{
 		this.ezSequence = new EzVarSequence( "Input sequence" );
 
@@ -106,7 +106,7 @@ public class Cellpose3EzPlug extends EzPlug
 		ezChan1.setToolTipText( "<html>Select the main channel to use for segmentation. "
 				+ "Use 0 to specify using a merge of all channels.</html>" );
 
-		this.ezChan2 = new EzVarInteger( "Optional channel", 1, 0, 3, 0 );
+		this.ezChan2 = new EzVarInteger( "Optional channel", 1, 0, 3, 1 );
 		ezChan2.setToolTipText( "<html>Select the nuclear channel for the 'cyto' models. "
 				+ "Use 0 to skip using this optional channel.</html>" );
 
@@ -127,7 +127,6 @@ public class Cellpose3EzPlug extends EzPlug
 
 		final EzVarListener< Sequence > nChannelsListener = ( source, seq ) -> updateChannels( seq );
 		ezSequence.addVarChangeListener( nChannelsListener );
-
 	}
 
 	private void updateChannels( final Sequence seq )
