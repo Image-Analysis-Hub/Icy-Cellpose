@@ -6,7 +6,7 @@ import java.util.Optional;
 /**
  * Data class to hold parameters for Cellpose segmentation.
  */
-public record CellposeParameters(
+public record Cellpose3Parameters(
 		// Core parameters
 		Cellpose3Model model,
 		double diameter,
@@ -45,7 +45,7 @@ public record CellposeParameters(
 		Optional< String > modelDir )
 {
 	// Default constructor with validation
-	public CellposeParameters
+	public Cellpose3Parameters
 	{
 		// Validate channels
 		if ( channels == null || channels.size() != 2 )
@@ -267,9 +267,9 @@ public record CellposeParameters(
 			return this;
 		}
 
-		public CellposeParameters build()
+		public Cellpose3Parameters build()
 		{
-			return new CellposeParameters(
+			return new Cellpose3Parameters(
 					model, diameter, do3D, channels, invert, normalize,
 					flowThreshold, cellProbThreshold, useGpu, device, batchSize,
 					saveOutput, outputDirectory, outputType, fastMode, diamMean,
@@ -279,7 +279,7 @@ public record CellposeParameters(
 	}
 
 	// Default parameters for common use cases
-	public static CellposeParameters defaultCytoParameters()
+	public static Cellpose3Parameters defaultCytoParameters()
 	{
 		return builder()
 				.model( Cellpose3Model.CYTO3 )
@@ -288,7 +288,7 @@ public record CellposeParameters(
 				.build();
 	}
 
-	public static CellposeParameters defaultNucleiParameters()
+	public static Cellpose3Parameters defaultNucleiParameters()
 	{
 		return builder()
 				.model( Cellpose3Model.NUCLEI )

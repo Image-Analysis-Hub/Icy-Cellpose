@@ -66,7 +66,7 @@ import plugins.tinevez.imglib2icy.VirtualSequence.DimensionArrangement;
 
 @IcyPluginName( "Cellpose 3" )
 @IcyPluginIcon( value = "/cellpose_logo.png" )
-public class CellposeEzPlug extends EzPlug
+public class Cellpose3EzPlug extends EzPlug
 {
 
 	private static final String CELLPOSE_ROI_NAME_PREFIX = "Cellpose3Roi_";
@@ -93,7 +93,7 @@ public class CellposeEzPlug extends EzPlug
 
 	protected VarSequence outputSequence = new VarSequence( "cellpose output", null );
 
-	public CellposeEzPlug()
+	public Cellpose3EzPlug()
 	{
 		this.ezSequence = new EzVarSequence( "Input sequence" );
 
@@ -169,7 +169,7 @@ public class CellposeEzPlug extends EzPlug
 		final int chan2 = ezChan2.getValue();
 		final int diameter = ezDiameter.getValue();
 
-		final CellposeParameters parameters = new CellposeParameters.Builder()
+		final Cellpose3Parameters parameters = new Cellpose3Parameters.Builder()
 				.model( model )
 				.channels( List.of( chan, chan2 ) )
 				.diameter( diameter )
@@ -178,7 +178,7 @@ public class CellposeEzPlug extends EzPlug
 		execute( sequence, parameters );
 	}
 
-	public void execute( final Sequence sequence, final CellposeParameters parameters )
+	public void execute( final Sequence sequence, final Cellpose3Parameters parameters )
 	{
 		try
 		{
@@ -222,7 +222,7 @@ public class CellposeEzPlug extends EzPlug
 		}
 	}
 
-	public Sequence process( final Sequence input, final CellposeParameters parameters ) throws Exception
+	public Sequence process( final Sequence input, final Cellpose3Parameters parameters ) throws Exception
 	{
 		@SuppressWarnings( "rawtypes" )
 		final Img img = ImgLib2IcyFunctions.wrap( input );
@@ -248,7 +248,7 @@ public class CellposeEzPlug extends EzPlug
 		return output;
 	}
 
-	private < T extends RealType< T > & NativeType< T > > Img< T > process( final Img< T > img, final String dimensionality, final CellposeParameters parameters ) throws Exception
+	private < T extends RealType< T > & NativeType< T > > Img< T > process( final Img< T > img, final String dimensionality, final Cellpose3Parameters parameters ) throws Exception
 	{
 		Thread.currentThread().setContextClassLoader( FastStringService.class.getClassLoader() );
 		final IcyApposeEzLogger apposeLogger = apposeEzLogger( getStatus() );
@@ -308,7 +308,7 @@ public class CellposeEzPlug extends EzPlug
 		}
 	}
 
-	private static String getScript( final CellposeParameters parameters )
+	private static String getScript( final Cellpose3Parameters parameters )
 	{
 		final String template = loadScript( "/CellposeAppose2DBatch.py" );
 
