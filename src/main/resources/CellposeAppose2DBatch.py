@@ -63,7 +63,10 @@ def process(img, axes):
     chan2 = ${--chan2}
     flow_threshold = ${--flow_threshold}
     cellprob_threshold = ${--cellprob_threshold}
-    min_size = ${--min_size}    
+    min_size = ${--min_size}   
+    do_3D = ${--do_3D}
+    stitch_threshold = ${--stitch_threshold}
+    anisotropy = ${--anisotropy}
 
     # Monkey-patch the size_model_path function to handle missing size models
     original_size_model_path = models.size_model_path    
@@ -96,13 +99,19 @@ def process(img, axes):
             channel_axis=caxis, progress=True,
             flow_threshold=flow_threshold,
             cellprob_threshold=cellprob_threshold,
-            min_size=min_size)
+            min_size=min_size,
+            do_3D=do_3D,
+            stitch_threshold=stitch_threshold,
+            anisotropy=anisotropy)
     else:
         out = model.eval(img, diameter=diameter, channels=[chan,chan2], 
             progress=True,
             flow_threshold=flow_threshold,
             cellprob_threshold=cellprob_threshold,
-            min_size=min_size)
+            min_size=min_size,
+            do_3D=do_3D,
+            stitch_threshold=stitch_threshold,
+            anisotropy=anisotropy)
         
     masks = out[0]
     cellpose_logger.info(f"Mask shape: {masks.shape}")

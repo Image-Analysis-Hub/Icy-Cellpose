@@ -27,6 +27,7 @@ import static plugins.tinevez.appose.ApposeUtils.pixiEnv;
 
 import java.awt.Color;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -54,7 +55,6 @@ import plugins.adufour.ezplug.EzVarBoolean;
 import plugins.adufour.ezplug.EzVarDouble;
 import plugins.adufour.ezplug.EzVarEnum;
 import plugins.adufour.ezplug.EzVarInteger;
-import plugins.adufour.ezplug.EzVarListener;
 import plugins.adufour.ezplug.EzVarSequence;
 import plugins.adufour.roi.LabelExtractor;
 import plugins.adufour.roi.LabelExtractor.ExtractionType;
@@ -92,7 +92,13 @@ public class Cellpose3 extends EzPlug
 
 	private final EzVarInteger ezMinSize;
 
-	// 3. Export options.
+	// 3. 3D processing parameters.
+
+	private final EzVarBoolean ezDo3D;
+
+	private final EzVarDouble ezStitchThreshold;
+
+	// 4. Export options.
 
 	protected EzVarBoolean ezExportROI;
 
@@ -100,11 +106,14 @@ public class Cellpose3 extends EzPlug
 
 	protected EzVarBoolean ezExportSwPool;
 
-	// Others
+	// Others.
 
 	protected final EzLabel nbObjects;
 
+	// Unused yet.
 	protected VarSequence outputSequence = new VarSequence( "cellpose output", null );
+
+	// Groups.
 
 	private final EzGroup ezCellposeBasicParams;
 
@@ -112,10 +121,11 @@ public class Cellpose3 extends EzPlug
 
 	private final EzGroup ezCellposeAdvancedParams;
 
+	private final EzGroup ez3DProcessing;
+
 	public Cellpose3()
 	{
 		this.ezSequence = new EzVarSequence( "Input sequence" );
-		ezSequence.addVarChangeListener( ( source, newValue ) -> ezExportSwPool.setVisible( newValue != null && newValue.getSizeT() > 1 ) );
 
 		// Cellpose basic parameters.
 
@@ -151,6 +161,18 @@ public class Cellpose3 extends EzPlug
 				ezFlowThreshold, ezCellprobThreshold, ezMinSize );
 		ezCellposeAdvancedParams.setFoldedState( true );
 
+		// 3D Processing parameters
+
+		this.ezDo3D = new EzVarBoolean( "3D segmentation", true );
+		ezDo3D.setToolTipText( "<html>Run true 3D segmentation instead of slice-by-slice 2D.</html>" );
+		this.ezStitchThreshold = new EzVarDouble( "Stitch threshold", 0.0, 0.0, 1.0, 0.1 );
+		ezStitchThreshold.setToolTipText( "<html>Stitch masks across Z slices (only if 3D segmentation is off). "
+				+ "0 = no stitching.</html>" );
+
+		this.ez3DProcessing = new EzGroup( "3D processing",
+				ezDo3D, ezStitchThreshold );
+		ez3DProcessing.setFoldedState( true );
+		
 		// Export options.
 
 		this.ezExportROI = new EzVarBoolean( "Export ROIs", true );
@@ -166,18 +188,20 @@ public class Cellpose3 extends EzPlug
 		this.nbObjects = new EzLabel( " " );
 
 		// Listeners.
-
-		final EzVarListener< Sequence > nChannelsListener = ( source, seq ) -> updateChannels( seq );
-		ezSequence.addVarChangeListener( nChannelsListener );
-	}
-
-	private void updateChannels( final Sequence seq )
-	{
-		if ( seq == null )
-			return;
-		final int nC = seq.getSizeC();
-		ezChan1.setMaxValue( nC );
-		ezChan2.setMaxValue( nC );
+		ezSequence.addVarChangeListener( ( source, seq ) -> {
+			if ( seq != null )
+			{
+				// Swimming pool export only for time series.
+				ezExportSwPool.setVisible( seq != null && seq.getSizeT() > 1 );
+				// 3D processing only for 3D stacks.
+				final boolean is3D = seq.getSizeZ() > 1;
+				ez3DProcessing.setVisible( is3D );
+				// Update channels max values.
+				final int nC = seq.getSizeC();
+				ezChan1.setMaxValue( nC );
+				ezChan2.setMaxValue( nC );
+			}
+		} );
 	}
 
 	@Override
@@ -186,6 +210,7 @@ public class Cellpose3 extends EzPlug
 		addEzComponent( ezSequence );
 		addEzComponent( ezCellposeBasicParams );
 		addEzComponent( ezCellposeAdvancedParams );
+		addEzComponent( ez3DProcessing );
 		addEzComponent( ezExportOptions );
 		addEzComponent( nbObjects );
 	}
@@ -207,6 +232,15 @@ public class Cellpose3 extends EzPlug
 		final double flowThreshold = ezFlowThreshold.getValue();
 		final double cellprobThreshold = ezCellprobThreshold.getValue();
 		final int minSize = ezMinSize.getValue();
+		final boolean do3D = ezDo3D.getValue() && sequence.getSizeZ() > 1;
+		final double stitchThreshold = sequence.getSizeZ() > 1 ? ezStitchThreshold.getValue() : 0.;
+
+		// ADD: Calculate anisotropy from pixel sizes
+		final double pixelSizeZ = sequence.getPixelSizeZ();
+		final double pixelSizeXY = sequence.getPixelSizeX();
+		final double anisotropy = ( pixelSizeXY > 0. && pixelSizeZ > 0. )
+				? pixelSizeZ / pixelSizeXY
+				: 1.;
 
 		final Cellpose3Parameters parameters = new Cellpose3Parameters.Builder()
 				.model( model )
@@ -215,6 +249,9 @@ public class Cellpose3 extends EzPlug
 				.flowThreshold( flowThreshold )
 				.cellProbThreshold( cellprobThreshold )
 				.minSize( minSize )
+				.do3D( do3D )
+				.anisotropy( anisotropy )
+				.stitchThreshold( stitchThreshold )
 				.build();
 
 		try
@@ -382,15 +419,21 @@ public class Cellpose3 extends EzPlug
 	{
 		final String template = loadScript( "/CellposeAppose2DBatch.py" );
 
-		final Map< String, String > settings = Map.of(
-				"${--pretrained_model}", parameters.model().modelName(),
-				"${--use_gpu}", parameters.useGpu() ? "True" : "False",
-				"${--diameter}", "" + parameters.diameter(),
-				"${--chan}", "" + parameters.channels().get( 0 ),
-				"${--chan2}", "" + parameters.channels().get( 1 ),
-				"${--flow_threshold}", "" + parameters.flowThreshold(),
-				"${--cellprob_threshold}", "" + parameters.cellProbThreshold(),
-				"${--min_size}", "" + parameters.minSize() );
+		final Map< String, String > settings = new LinkedHashMap<>();
+		settings.put( "${--pretrained_model}", parameters.model().modelName() );
+		settings.put( "${--diameter}", "" + parameters.diameter() );
+		settings.put( "${--chan}", "" + parameters.channels().get( 0 ) );
+		settings.put( "${--chan2}", "" + parameters.channels().get( 1 ) );
+
+		settings.put( "${--flow_threshold}", "" + parameters.flowThreshold() );
+		settings.put( "${--cellprob_threshold}", "" + parameters.cellProbThreshold() );
+		settings.put( "${--min_size}", "" + parameters.minSize() );
+
+		settings.put( "${--do_3D}", parameters.do3D() ? "True" : "False" );
+		settings.put( "${--stitch_threshold}", "" + parameters.stitchThreshold() );
+		settings.put( "${--anisotropy}", "" + parameters.anisotropy() );
+
+		settings.put( "${--use_gpu}", parameters.useGpu() ? "True" : "False" );
 
 		String script = template;
 		for ( final Map.Entry< String, String > entry : settings.entrySet() )
