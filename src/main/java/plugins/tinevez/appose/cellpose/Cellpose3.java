@@ -108,7 +108,7 @@ public class Cellpose3 extends EzPlug
 
 	// Others.
 
-	protected final EzLabel nbObjects;
+	protected final EzLabel ezInfo;
 
 	// Unused yet.
 	protected VarSequence outputSequence = new VarSequence( "cellpose output", null );
@@ -185,7 +185,7 @@ public class Cellpose3 extends EzPlug
 
 		// Info.
 
-		this.nbObjects = new EzLabel( " " );
+		this.ezInfo = new EzLabel( " " );
 
 		// Listeners.
 		ezSequence.addVarChangeListener( ( source, seq ) -> {
@@ -212,7 +212,7 @@ public class Cellpose3 extends EzPlug
 		addEzComponent( ezCellposeAdvancedParams );
 		addEzComponent( ez3DProcessing );
 		addEzComponent( ezExportOptions );
-		addEzComponent( nbObjects );
+		addEzComponent( ezInfo );
 	}
 
 	@Override
@@ -224,6 +224,7 @@ public class Cellpose3 extends EzPlug
 	@Override
 	protected void execute()
 	{
+		ezInfo.setText( " " );
 		final Sequence sequence = ezSequence.getValue( true );
 		final Cellpose3Model model = ezModel.getValue();
 		final int chan = ezChan1.getValue();
@@ -277,7 +278,7 @@ public class Cellpose3 extends EzPlug
 			sequence.addROIs( rois, true );
 
 			if ( getUI() != null )
-				nbObjects.setText( rois.size() + " objects detected" );
+				ezInfo.setText( rois.size() + " objects detected" );
 		}
 
 		if ( ezExportSequence.getValue() || outputSequence.isReferenced() )
