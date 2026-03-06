@@ -42,7 +42,6 @@ import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginName;
 import org.bioimageanalysis.icy.model.roi.ROI;
 import org.bioimageanalysis.icy.model.sequence.Sequence;
 import org.bioimageanalysis.icy.model.sequence.SequenceUtil;
-import org.bioimageanalysis.icy.system.logging.IcyLogger;
 
 import net.imglib2.appose.NDArrays;
 import net.imglib2.img.Img;
@@ -52,6 +51,7 @@ import plugins.adufour.ezplug.EzGroup;
 import plugins.adufour.ezplug.EzLabel;
 import plugins.adufour.ezplug.EzPlug;
 import plugins.adufour.ezplug.EzVarBoolean;
+import plugins.adufour.ezplug.EzVarDouble;
 import plugins.adufour.ezplug.EzVarEnum;
 import plugins.adufour.ezplug.EzVarInteger;
 import plugins.adufour.ezplug.EzVarListener;
@@ -74,6 +74,8 @@ public class Cellpose3 extends EzPlug
 
 	protected final EzVarSequence ezSequence;
 
+	// 1. Basic Cellpose parameters group.
+
 	protected final EzVarEnum< Cellpose3Model > ezModel;
 
 	protected final EzVarInteger ezChan1;
@@ -82,11 +84,23 @@ public class Cellpose3 extends EzPlug
 
 	protected final EzVarInteger ezDiameter;
 
+	// 2. Segmentation quality group
+
+	private final EzVarDouble ezFlowThreshold;
+
+	private final EzVarDouble ezCellprobThreshold;
+
+	private final EzVarInteger ezMinSize;
+
+	// 3. Export options.
+
 	protected EzVarBoolean ezExportROI;
 
 	protected EzVarBoolean ezExportSequence;
 
 	protected EzVarBoolean ezExportSwPool;
+
+	// Others
 
 	protected final EzLabel nbObjects;
 
@@ -95,6 +109,8 @@ public class Cellpose3 extends EzPlug
 	private final EzGroup ezCellposeBasicParams;
 
 	private final EzGroup ezExportOptions;
+
+	private final EzGroup ezCellposeAdvancedParams;
 
 	public Cellpose3()
 	{
@@ -118,6 +134,22 @@ public class Cellpose3 extends EzPlug
 
 		this.ezCellposeBasicParams = new EzGroup( "Cellpose basic parameters",
 				ezModel, ezChan1, ezChan2, ezDiameter );
+
+		// Advanced parameters.
+
+		this.ezFlowThreshold = new EzVarDouble( "Flow threshold", 0.4, 0., 3., 0.1 );
+		ezFlowThreshold.setToolTipText( "<html>Threshold for flow error filtering. "
+				+ "Lower = more masks (permissive), Higher = fewer masks (strict).</html>" );
+		this.ezCellprobThreshold = new EzVarDouble( "Cell probability threshold", 0., -6., 6., 0.5 );
+		ezCellprobThreshold.setToolTipText( "<html>Threshold for cell probability. "
+				+ "Increase to filter low-confidence detections.</html>" );
+		this.ezMinSize = new EzVarInteger( "Minimum size (pixels)", 15, 0, 10000, 1 );
+		ezMinSize.setToolTipText( "<html>Minimum object size in pixels. "
+				+ "Objects smaller than this are removed.</html>" );
+
+		this.ezCellposeAdvancedParams = new EzGroup( "Advanced parameters",
+				ezFlowThreshold, ezCellprobThreshold, ezMinSize );
+		ezCellposeAdvancedParams.setFoldedState( true );
 
 		// Export options.
 
@@ -153,6 +185,7 @@ public class Cellpose3 extends EzPlug
 	{
 		addEzComponent( ezSequence );
 		addEzComponent( ezCellposeBasicParams );
+		addEzComponent( ezCellposeAdvancedParams );
 		addEzComponent( ezExportOptions );
 		addEzComponent( nbObjects );
 	}
@@ -171,43 +204,50 @@ public class Cellpose3 extends EzPlug
 		final int chan = ezChan1.getValue();
 		final int chan2 = ezChan2.getValue();
 		final int diameter = ezDiameter.getValue();
+		final double flowThreshold = ezFlowThreshold.getValue();
+		final double cellprobThreshold = ezCellprobThreshold.getValue();
+		final int minSize = ezMinSize.getValue();
 
 		final Cellpose3Parameters parameters = new Cellpose3Parameters.Builder()
 				.model( model )
 				.channels( List.of( chan, chan2 ) )
 				.diameter( diameter )
+				.flowThreshold( flowThreshold )
+				.cellProbThreshold( cellprobThreshold )
+				.minSize( minSize )
 				.build();
 
-		execute( sequence, parameters );
-	}
-
-	public void execute( final Sequence sequence, final Cellpose3Parameters parameters )
-	{
 		try
 		{
-			final ApposeLogger apposeLogger = apposeEzLogger( getStatus() );
-			final Sequence output = process( sequence, parameters, apposeLogger );
-
-			if ( ezExportROI.getValue() )
-			{
-				cleanOldRois( sequence );
-				final List< ROI > rois = extractRois( output );
-				sequence.addROIs( rois, true );
-
-				if ( getUI() != null )
-					nbObjects.setText( rois.size() + " objects detected" );
-			}
-
-			if ( ezExportSequence.getValue() || outputSequence.isReferenced() )
-			{
-				outputSequence.setValue( output );
-				if ( !isHeadLess() )
-					addSequence( output );
-			}
+			execute( sequence, parameters );
 		}
 		catch ( final Exception e )
 		{
-			IcyLogger.warn( getClass(), e );
+			e.printStackTrace();
+			throw new RuntimeException( "Cellpose failed: " + e.getMessage(), e );
+		}
+	}
+
+	public void execute( final Sequence sequence, final Cellpose3Parameters parameters ) throws Exception
+	{
+		final ApposeLogger apposeLogger = apposeEzLogger( getStatus() );
+		final Sequence output = process( sequence, parameters, apposeLogger );
+
+		if ( ezExportROI.getValue() )
+		{
+			cleanOldRois( sequence );
+			final List< ROI > rois = extractRois( output );
+			sequence.addROIs( rois, true );
+
+			if ( getUI() != null )
+				nbObjects.setText( rois.size() + " objects detected" );
+		}
+
+		if ( ezExportSequence.getValue() || outputSequence.isReferenced() )
+		{
+			outputSequence.setValue( output );
+			if ( !isHeadLess() )
+				addSequence( output );
 		}
 	}
 
@@ -293,7 +333,14 @@ public class Cellpose3 extends EzPlug
 
 			// Verify that it worked.
 			if ( task.status != TaskStatus.COMPLETE )
+			{
+				String errorMsg = "Python script failed with status: " + task.status;
+				if ( task.error != null && !task.error.isEmpty() )
+					errorMsg += "\nPython error: " + task.error;
+				apposeLogger.logError( errorMsg );
+				System.err.println( errorMsg );
 				throw new RuntimeException( "Python script failed with status: " + task.status );
+			}
 
 			// Benchmark.
 			final long end = System.currentTimeMillis();
@@ -340,7 +387,11 @@ public class Cellpose3 extends EzPlug
 				"${--use_gpu}", parameters.useGpu() ? "True" : "False",
 				"${--diameter}", "" + parameters.diameter(),
 				"${--chan}", "" + parameters.channels().get( 0 ),
-				"${--chan2}", "" + parameters.channels().get( 1 ) );
+				"${--chan2}", "" + parameters.channels().get( 1 ),
+				"${--flow_threshold}", "" + parameters.flowThreshold(),
+				"${--cellprob_threshold}", "" + parameters.cellProbThreshold(),
+				"${--min_size}", "" + parameters.minSize() );
+
 		String script = template;
 		for ( final Map.Entry< String, String > entry : settings.entrySet() )
 			script = script.replace( entry.getKey(), entry.getValue() );

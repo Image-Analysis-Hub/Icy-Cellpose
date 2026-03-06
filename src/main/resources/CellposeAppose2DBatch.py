@@ -61,6 +61,9 @@ def process(img, axes):
     diameter = ${--diameter}
     chan = ${--chan}
     chan2 = ${--chan2}
+    flow_threshold = ${--flow_threshold}
+    cellprob_threshold = ${--cellprob_threshold}
+    min_size = ${--min_size}    
 
     # Monkey-patch the size_model_path function to handle missing size models
     original_size_model_path = models.size_model_path    
@@ -76,6 +79,10 @@ def process(img, axes):
     cellpose_logger.info("Creating Cellpose model...")
     
     model = models.Cellpose(model_type=model_name, gpu=use_gpu)
+    
+    import inspect
+    eval_params = inspect.signature(model.eval).parameters
+    cellpose_logger.info(f"model.eval() accepts these parameters: {list(eval_params.keys())}")
 
     cellpose_logger.info(f"Original image shape: {img.shape}")
     cellpose_logger.info(f"Axes mapping: " + str(axes))
@@ -85,9 +92,18 @@ def process(img, axes):
     if 'C' in axes:
         caxis = axes['C']
         task.update(f"Using channel axis: {caxis}")
-        out = model.eval(img, diameter=diameter, channels=[chan,chan2], channel_axis=caxis, progress=True)
+        out = model.eval(img, diameter=diameter, channels=[chan,chan2], 
+            channel_axis=caxis, progress=True,
+            flow_threshold=flow_threshold,
+            cellprob_threshold=cellprob_threshold,
+            min_size=min_size)
     else:
-        out = model.eval(img, diameter=diameter, channels=[chan,chan2], progress=True)
+        out = model.eval(img, diameter=diameter, channels=[chan,chan2], 
+            progress=True,
+            flow_threshold=flow_threshold,
+            cellprob_threshold=cellprob_threshold,
+            min_size=min_size)
+        
     masks = out[0]
     cellpose_logger.info(f"Mask shape: {masks.shape}")
     
