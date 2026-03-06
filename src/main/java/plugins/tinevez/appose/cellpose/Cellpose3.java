@@ -131,6 +131,8 @@ public class Cellpose3 extends EzPlug
 
 	private void updateChannels( final Sequence seq )
 	{
+		if ( seq == null )
+			return;
 		final int nC = seq.getSizeC();
 		ezChan1.setMaxValue( nC );
 		ezChan2.setMaxValue( nC );
