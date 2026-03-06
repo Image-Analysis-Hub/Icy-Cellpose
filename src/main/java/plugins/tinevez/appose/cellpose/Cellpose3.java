@@ -328,8 +328,8 @@ public class Cellpose3 extends EzPlug
 
 		// Inputs.
 		final NDArray ndArray = NDArrays.asNDArray( img );
-		// Get axes order.
-		final Map< String, Integer > axesOrder = new HashMap<>();
+		// Get flipped axes order.
+		final Map< String, Integer > axesOrder = new LinkedHashMap<>();
 		for ( int d = 0; d < img.numDimensions(); d++ )
 		{
 			final int flippedD = img.numDimensions() - d - 1;
