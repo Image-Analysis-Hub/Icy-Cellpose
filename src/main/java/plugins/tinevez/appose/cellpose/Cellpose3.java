@@ -273,7 +273,10 @@ public class Cellpose3 extends EzPlug
 		{
 			// Appose task.
 			final Task task = python.task( getScript( parameters ), inputs );
-			task.listen( e -> apposeLogger.logInfo( e.message ) );
+			task.listen( e -> {
+				if ( e.maximum != 0 )
+					apposeLogger.logProgress( e.message, e.current, e.maximum );
+			} );
 
 			// Start the script, and return to Java immediately.
 			apposeLogger.logInfo( "Starting task" );
