@@ -1,13 +1,67 @@
+import os
+import re
 from cellpose import models, io
-import numpy as np
+import logging
 import appose
+from pathlib import Path
+
+# Define a custom logging handler that sends log messages to a function
+class FunctionHandler(logging.Handler):
+    def __init__(self, func):
+        super().__init__()
+        self.func = func
+    
+    def emit(self, record):
+        # Format the log record and send to the function
+        log_message = self.format(record)
+        self.func(log_message)
+
+# Forward to Appose's logging function
+def appose_log_function(message):
+    # Parse progress if present
+    progress_match = re.search(r'(\d+)%\|[^|]+\|\s*(\d+)/(\d+)', message)
+    if progress_match:
+        percentage = int(progress_match.group(1))
+        current = int(progress_match.group(2))
+        total = int(progress_match.group(3))
+        task.update(f"Running Cellpose 3 - {percentage}%", current, total)
+    else:
+        task.update(message)
 
 def process(img, axes):
-
-    io.logger_setup()
+    # Create log in USER_HOME/.icy/
+    user_home = Path.home()
+    icy_dir = user_home / '.icy'
+    icy_dir.mkdir(exist_ok=True)
+    log_file = icy_dir / 'cellpose_debug.log'
+    
+    # Set up file logging (this will catch EVERYTHING)
+    file_handler = logging.FileHandler(str(log_file), mode='w')
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    
+    # Set up custom function handler for appose
+    function_handler = FunctionHandler(appose_log_function)
+    function_handler.setLevel(logging.INFO)
+    function_handler.setFormatter(logging.Formatter('%(levelname)s - %(message)s'))
+    
+    # Configure cellpose logger BEFORE any cellpose operations
+    cellpose_logger = logging.getLogger('cellpose')
+    cellpose_logger.handlers.clear()  # Clear any existing handlers
+    cellpose_logger.setLevel(logging.DEBUG)
+    cellpose_logger.addHandler(file_handler)
+    cellpose_logger.addHandler(function_handler)
+    cellpose_logger.propagate = False  # Don't propagate to root logger
+    
+    # Also configure root logger to catch everything
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+    root_logger.addHandler(file_handler)
+    
+    cellpose_logger.info(f"Logging to: {log_file}")
     
     # Store template parameters in python variables.
-    model_name =  '${--pretrained_model}'
+    model_name = '${--pretrained_model}'
     use_gpu = ${--use_gpu}
     diameter = ${--diameter}
     chan = ${--chan}
@@ -15,19 +69,22 @@ def process(img, axes):
 
     # Monkey-patch the size_model_path function to handle missing size models
     original_size_model_path = models.size_model_path    
-    def patched_size_model_path( model_type ):
+    def patched_size_model_path(model_type):
         try:
-            return original_size_model_path( model_type )
+            return original_size_model_path(model_type)
         except FileNotFoundError:
             # Return None if size model not found
             return None
     models.size_model_path = patched_size_model_path
 
-    model = models.Cellpose( model_type=model_name, gpu=use_gpu )
+    # Log before model creation
+    cellpose_logger.info("Creating Cellpose model...")
+    
+    model = models.Cellpose(model_type=model_name, gpu=use_gpu)
 
-    task.update(f"Original image shape: {img.shape}")
-    task.update(f"Axes mapping: " + str(axes))
-    task.update(f"Using the following parameters: diameter={diameter}, chan={chan}, chan2={chan2}, pretrained_model={model_name}, use_gpu={use_gpu}")
+    cellpose_logger.info(f"Original image shape: {img.shape}")
+    cellpose_logger.info(f"Axes mapping: " + str(axes))
+    cellpose_logger.info(f"Using the following parameters: diameter={diameter}, chan={chan}, chan2={chan2}, pretrained_model={model_name}, use_gpu={use_gpu}")
     
     # Run Cellpose on each timepoint
     if 'C' in axes:
@@ -35,9 +92,13 @@ def process(img, axes):
         task.update(f"Using channel axis: {caxis}")
         out = model.eval(img, diameter=diameter, channels=[chan,chan2], channel_axis=caxis, progress=True)
     else:
-        out = model.eval(img, diameter=diameter, channels=[chan,chan2], progress=True)	
+        out = model.eval(img, diameter=diameter, channels=[chan,chan2], progress=True)
     masks = out[0]
-    task.update(f"Mask shape: {masks.shape}")
+    cellpose_logger.info(f"Mask shape: {masks.shape}")
+    
+    # Close handlers
+    file_handler.close()
+    
     return masks
 
 
