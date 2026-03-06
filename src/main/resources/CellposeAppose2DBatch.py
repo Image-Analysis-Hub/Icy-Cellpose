@@ -53,11 +53,6 @@ def process(img, axes):
     cellpose_logger.addHandler(function_handler)
     cellpose_logger.propagate = False  # Don't propagate to root logger
     
-    # Also configure root logger to catch everything
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
-    root_logger.addHandler(file_handler)
-    
     cellpose_logger.info(f"Logging to: {log_file}")
     
     # Store template parameters in python variables.
