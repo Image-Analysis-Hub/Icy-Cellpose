@@ -162,6 +162,7 @@ public class ApposeUtils
 		{
 			// Default implementation does nothing, override if needed.
 		}
+
 	}
 
 	public static class IcyApposeLogger implements ApposeLogger
@@ -176,7 +177,8 @@ public class ApposeUtils
 		{
 			this.pf = new ProgressFrame( klass.getSimpleName() );
 			this.progressConsumer = ( title, current, maximum ) -> {
-				pf.setMessage( title );
+				if ( title != null && !title.isBlank() )
+					pf.setMessage( title );
 				pf.notifyProgress( current, maximum );
 			};
 			this.logger = LogManager.getLogger( klass );
@@ -236,7 +238,8 @@ public class ApposeUtils
 		{
 			this.status = status;
 			this.progressConsumer = ( title, current, maximum ) -> {
-				logInfo( title );
+				if ( title != null && !title.isBlank() )
+					logInfo( title );
 				status.setCompletion( ( double ) current / maximum );
 			};
 		}
