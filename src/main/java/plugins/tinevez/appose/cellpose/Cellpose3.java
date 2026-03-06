@@ -134,7 +134,7 @@ public class Cellpose3 extends EzPlug
 		this.ezChan1 = new EzVarInteger( "Main channel", 1, 0, 3, 1 );
 		ezChan1.setToolTipText( "<html>Select the main channel to use for segmentation. "
 				+ "Use 0 to specify using a merge of all channels.</html>" );
-		this.ezChan2 = new EzVarInteger( "Optional channel", 1, 0, 3, 1 );
+		this.ezChan2 = new EzVarInteger( "Optional channel", 0, 0, 3, 1 );
 		ezChan2.setToolTipText( "<html>Select the nuclear channel for the 'cyto' models. "
 				+ "Use 0 to skip using this optional channel.</html>" );
 		this.ezDiameter = new EzVarInteger( "Diameter (pixels)", 30, 0, Integer.MAX_VALUE, 1 );
