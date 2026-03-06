@@ -268,11 +268,12 @@ public class Cellpose3 extends EzPlug
 
 	public void execute( final Sequence sequence, final Cellpose3Parameters parameters ) throws Exception
 	{
-		final ApposeLogger apposeLogger = apposeEzLogger( getStatus() );
+		final ApposeLogger apposeLogger = apposeEzLogger( getClass(), getStatus() );
 		final Sequence output = process( sequence, parameters, apposeLogger );
 
 		if ( ezExportROI.getValue() )
 		{
+			apposeLogger.logInfo( "Converting Cellpose output to ROIs" );
 			cleanOldRois( sequence );
 			final List< ROI > rois = extractRois( output );
 			sequence.addROIs( rois, true );
@@ -358,16 +359,18 @@ public class Cellpose3 extends EzPlug
 			task.listen( e -> {
 				if ( e.maximum != 0 )
 					apposeLogger.logProgress( e.message, e.current, e.maximum );
+				else
+					apposeLogger.logInfo( e.message );
 			} );
 
 			// Start the script, and return to Java immediately.
-			apposeLogger.logInfo( "Starting task" );
+			apposeLogger.logInfo( "Starting Cellpose task" );
 			final long start = System.currentTimeMillis();
 			task.start();
-			apposeLogger.logInfo( "Task started" );
+			apposeLogger.logInfo( "Cellpose task started" );
 
 			task.waitFor();
-			apposeLogger.logInfo( "Task finished with status: " + task.status );
+			apposeLogger.logInfo( "Cellpose task finished with status: " + task.status );
 
 			// Verify that it worked.
 			if ( task.status != TaskStatus.COMPLETE )
@@ -385,7 +388,7 @@ public class Cellpose3 extends EzPlug
 			apposeLogger.logInfo( "Task finished in " + ( end - start ) / 1000. + " s" );
 
 			final NDArray maskArr = ( NDArray ) task.outputs.get( "masks" );
-			apposeLogger.logInfo( "Received output from Python: " + maskArr );
+			apposeLogger.logInfo( "Received output from Python: " + maskArr.shape() );
 			final Img< T > output = NDArrays.asArrayImg( maskArr );
 			return output;
 		}

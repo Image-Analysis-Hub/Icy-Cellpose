@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apposed.appose.Builder.ProgressConsumer;
 import org.bioimageanalysis.icy.gui.frame.progress.ProgressFrame;
 import org.bioimageanalysis.icy.model.colormap.IcyColorMap;
@@ -104,7 +102,6 @@ public class ApposeUtils
 		{
 			final URL pixiFile = ApposeUtils.class.getResource( resourcePath );
 			env = IOUtils.toString( pixiFile, StandardCharsets.UTF_8 );
-
 		}
 		catch ( final IOException e )
 		{
@@ -137,9 +134,9 @@ public class ApposeUtils
 		return new IcyApposeLogger( callerKlass );
 	}
 
-	public static IcyApposeEzLogger apposeEzLogger( final EzStatus status )
+	public static IcyApposeEzLogger apposeEzLogger( final Class< ? > callerKlass, final EzStatus status )
 	{
-		return new IcyApposeEzLogger( status );
+		return new IcyApposeEzLogger( status, callerKlass );
 	}
 
 	public static interface ApposeLogger extends AutoCloseable
@@ -165,36 +162,39 @@ public class ApposeUtils
 
 	}
 
-	public static class IcyApposeLogger implements ApposeLogger
+	private static class IcyApposeLogger implements ApposeLogger
 	{
 		private final ProgressFrame pf;
 
 		private final ProgressConsumer progressConsumer;
 
-		private final Logger logger;
+		private final Class< ? > klass;
 
-		public IcyApposeLogger( final Class< ? > klass )
+		private IcyApposeLogger( final Class< ? > klass )
 		{
+			this.klass = klass;
 			this.pf = new ProgressFrame( klass.getSimpleName() );
 			this.progressConsumer = ( title, current, maximum ) -> {
 				if ( title != null && !title.isBlank() )
+				{
+					IcyLogger.info( klass, title );
 					pf.setMessage( title );
+				}
 				pf.notifyProgress( current, maximum );
 			};
-			this.logger = LogManager.getLogger( klass );
 		}
 
 		@Override
 		public void logInfo( final String msg )
 		{
-//			IcyLogger.info( klass, msg );
-			System.out.println( msg ); // DEBUG
+			if ( msg != null )
+				IcyLogger.info( klass, msg );
 		}
 
 		@Override
 		public void logError( final String msg )
 		{
-			logger.error( msg );
+			logInfo( msg );
 		}
 
 		@Override
@@ -228,15 +228,18 @@ public class ApposeUtils
 		}
 	}
 
-	public static class IcyApposeEzLogger implements ApposeLogger
+	private static class IcyApposeEzLogger implements ApposeLogger
 	{
 		private final EzStatus status;
 
 		private final ProgressConsumer progressConsumer;
 
-		public IcyApposeEzLogger( final EzStatus status )
+		private final Class< ? > klass;
+
+		private IcyApposeEzLogger( final EzStatus status, final Class< ? > klass )
 		{
 			this.status = status;
+			this.klass = klass;
 			this.progressConsumer = ( title, current, maximum ) -> {
 				if ( title != null && !title.isBlank() )
 					logInfo( title );
@@ -248,7 +251,10 @@ public class ApposeUtils
 		public void logInfo( final String msg )
 		{
 			if ( msg != null )
+			{
+				IcyLogger.info( klass, msg );
 				status.setMessage( msg );
+			}
 		}
 
 		@Override
