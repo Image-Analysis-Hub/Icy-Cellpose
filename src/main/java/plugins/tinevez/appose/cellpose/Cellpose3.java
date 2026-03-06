@@ -30,8 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JSeparator;
-
 import org.apache.groovy.json.FastStringService;
 import org.apposed.appose.Appose;
 import org.apposed.appose.Environment;
@@ -50,6 +48,7 @@ import net.imglib2.appose.NDArrays;
 import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import plugins.adufour.ezplug.EzGroup;
 import plugins.adufour.ezplug.EzLabel;
 import plugins.adufour.ezplug.EzPlug;
 import plugins.adufour.ezplug.EzVarBoolean;
@@ -93,37 +92,48 @@ public class Cellpose3 extends EzPlug
 
 	protected VarSequence outputSequence = new VarSequence( "cellpose output", null );
 
+	private final EzGroup ezCellposeBasicParams;
+
+	private final EzGroup ezExportOptions;
+
 	public Cellpose3()
 	{
 		this.ezSequence = new EzVarSequence( "Input sequence" );
-
 		ezSequence.addVarChangeListener( ( source, newValue ) -> ezExportSwPool.setVisible( newValue != null && newValue.getSizeT() > 1 ) );
+
+		// Cellpose basic parameters.
 
 		this.ezModel = new EzVarEnum<>( "Pretrained model", Cellpose3Model.values(), Cellpose3Model.CYTO3 );
 		ezModel.setToolTipText( "<html>Select the pretrained Cellpose model to use.</html>" );
-
 		this.ezChan1 = new EzVarInteger( "Main channel", 1, 0, 3, 1 );
 		ezChan1.setToolTipText( "<html>Select the main channel to use for segmentation. "
 				+ "Use 0 to specify using a merge of all channels.</html>" );
-
 		this.ezChan2 = new EzVarInteger( "Optional channel", 1, 0, 3, 1 );
 		ezChan2.setToolTipText( "<html>Select the nuclear channel for the 'cyto' models. "
 				+ "Use 0 to skip using this optional channel.</html>" );
-
 		this.ezDiameter = new EzVarInteger( "Diameter (pixels)", 30, 0, Integer.MAX_VALUE, 1 );
 		ezDiameter.setToolTipText( "<html>Approximate diameter of the objects to segment, in pixels. "
 				+ "If 0 will use the diameter of the training labels used in the model, "
 				+ "or with built-in model will estimate diameter for each image</html>" );
 
+		this.ezCellposeBasicParams = new EzGroup( "Cellpose basic parameters",
+				ezModel, ezChan1, ezChan2, ezDiameter );
+
+		// Export options.
+
 		this.ezExportROI = new EzVarBoolean( "Export ROIs", true );
-
 		this.ezExportSequence = new EzVarBoolean( "Export labels", false );
-
 		this.ezExportSwPool = new EzVarBoolean( "Prepare for tracking", false );
 		ezExportSwPool.setToolTipText(
 				"Exports the detected object in a format compatible with the \"Spot Tracking\" plug-in" );
 
+		this.ezExportOptions = new EzGroup( "Export options", ezExportROI, ezExportSequence, ezExportSwPool );
+
+		// Info.
+
 		this.nbObjects = new EzLabel( " " );
+
+		// Listeners.
 
 		final EzVarListener< Sequence > nChannelsListener = ( source, seq ) -> updateChannels( seq );
 		ezSequence.addVarChangeListener( nChannelsListener );
@@ -142,16 +152,8 @@ public class Cellpose3 extends EzPlug
 	protected void initialize()
 	{
 		addEzComponent( ezSequence );
-		addComponent( new JSeparator( JSeparator.HORIZONTAL ) );
-		addEzComponent( ezModel );
-		addEzComponent( ezChan1 );
-		addEzComponent( ezChan2 );
-		addEzComponent( ezDiameter );
-		addComponent( new JSeparator( JSeparator.HORIZONTAL ) );
-		addEzComponent( ezExportROI );
-		addEzComponent( ezExportSequence );
-		addEzComponent( ezExportSwPool );
-		addComponent( new JSeparator( JSeparator.HORIZONTAL ) );
+		addEzComponent( ezCellposeBasicParams );
+		addEzComponent( ezExportOptions );
 		addEzComponent( nbObjects );
 	}
 
