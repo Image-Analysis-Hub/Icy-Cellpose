@@ -20,7 +20,11 @@ public record Cellpose3Parameters(
 		double flowThreshold,
 		double cellProbThreshold,
 		boolean useGpu,
-		double minSize )
+		double minSize,
+
+		// Optional parameters for 3D stitching
+		double anisotropy,
+		double stitchThreshold )
 {
 	// Default constructor with validation
 	public Cellpose3Parameters
@@ -64,6 +68,10 @@ public record Cellpose3Parameters(
 		private boolean useGpu = true;
 
 		private double minSize = 15.;
+
+		private double anisotropy = 1.;
+
+		private double stitchThreshold = 0.;
 
 		public Builder model( final Cellpose3Model model )
 		{
@@ -135,7 +143,20 @@ public record Cellpose3Parameters(
 		{
 			return new Cellpose3Parameters(
 					model, diameter, do3D, channels, invert, normalize,
-					flowThreshold, cellProbThreshold, useGpu, minSize );
+					flowThreshold, cellProbThreshold, useGpu, minSize,
+					anisotropy, stitchThreshold );
+		}
+
+		public Builder anisotropy( final double anisotropy )
+		{
+			this.anisotropy = anisotropy;
+			return this;
+		}
+
+		public Builder stitchThreshold( final double stitchThreshold )
+		{
+			this.stitchThreshold = stitchThreshold;
+			return this;
 		}
 	}
 
