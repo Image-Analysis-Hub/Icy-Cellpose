@@ -7,8 +7,8 @@
     <!-- Inherited Icy Parent POM -->
     <parent>
         <artifactId>pom-icy</artifactId>
-        <groupId>org.bioimageanalysis.icy</groupId>
-        <version>3.0.0-a.5</version>
+        <groupId>fr.icy</groupId>
+        <version>3.0.0-a.7</version>
     </parent>
 
     <!-- Project Information -->
@@ -83,29 +83,30 @@
     <dependencies>
         <!-- The Kernel default extensions -->
         <dependency>
-            <groupId>org.bioimageanalysis.icy</groupId>
-            <artifactId>kernel-extension</artifactId>
+		    <groupId>fr.icy.extensions</groupId>
+		    <artifactId>kernel</artifactId>
         </dependency>
         
         <dependency>
-            <groupId>org.bioimageanalysis.icy</groupId>
-            <artifactId>label-extractor</artifactId>
-            <version>2.0.0-a.3</version>
+    		<groupId>fr.icy.extensions</groupId>
+		    <artifactId>label-extractor</artifactId>
+		    <version>2.0.0-a.7</version>
         </dependency>
 
         <!-- The EzPlug library, simplifies writing UI for Icy plugins. -->
         <dependency>
-            <groupId>org.bioimageanalysis.icy</groupId>
-            <artifactId>ezplug</artifactId>
-        </dependency>
+		    <groupId>fr.icy.extensions</groupId>
+        	<artifactId>ezplug</artifactId>
+	    </dependency>
         <dependency>
-            <groupId>org.bioimageanalysis.icy</groupId>
-            <artifactId>protocols</artifactId>
+		    <groupId>fr.icy.extensions</groupId>
+		    <artifactId>protocols</artifactId>
         </dependency>
         
         <dependency>
-        	<groupId>org.bioimageanalysis.icy</groupId>
-            <artifactId>imglib2-icy</artifactId>
+		    <groupId>fr.icy.extensions</groupId>
+		    <artifactId>imglib2</artifactId>
+		    <version>8.0.0-a.7</version>
         </dependency>
 
 		<!-- Appose dependencies -->
