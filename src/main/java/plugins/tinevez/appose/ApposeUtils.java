@@ -5,19 +5,19 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.apache.commons.io.IOUtils;
 import org.apposed.appose.Builder.ProgressConsumer;
-import org.bioimageanalysis.icy.gui.frame.progress.ProgressFrame;
-import org.bioimageanalysis.icy.model.colormap.IcyColorMap;
-import org.bioimageanalysis.icy.model.sequence.Sequence;
-import org.bioimageanalysis.icy.system.logging.IcyLogger;
+import org.apposed.appose.TaskEvent;
 
+import fr.icy.gui.frame.progress.ProgressFrame;
+import fr.icy.model.colormap.IcyColorMap;
+import fr.icy.model.sequence.Sequence;
+import fr.icy.system.logging.IcyLogger;
+import net.imglib2.cellpose.ApposeTaskListener;
+import net.imglib2.cellpose.AxisInfo;
 import plugins.adufour.ezplug.EzStatus;
 
 public class ApposeUtils
@@ -77,56 +77,16 @@ public class ApposeUtils
 		return new long[] { sizeX, sizeY, sizeC, sizeZ, sizeT };
 	}
 
-	public static String getDimensionality( final Sequence sequence )
+	public static AxisInfo getAxisInfo( final Sequence sequence )
 	{
 		final long[] dims = getDims( sequence );
-		final String start = "XYCZT"; // Always like this in Icy.
-		final StringBuilder sb = new StringBuilder();
-		for ( int i = 0; i < dims.length; i++ )
-			if ( dims[ i ] > 1 )
-				sb.append( start.charAt( i ) );
-		return sb.toString();
-	}
-
-	/**
-	 * Utility method to load a Pixi environment from resources.
-	 *
-	 * @param resourcePath
-	 *            the resource path.
-	 * @return the Pixi environment as a string.
-	 */
-	public static String pixiEnv( final String resourcePath )
-	{
-		String env = "";
-		try
-		{
-			final URL pixiFile = ApposeUtils.class.getResource( resourcePath );
-			env = IOUtils.toString( pixiFile, StandardCharsets.UTF_8 );
-		}
-		catch ( final IOException e )
-		{
-			e.printStackTrace();
-		}
-		return env;
-	}
-
-	/**
-	 * Utility method to load an Appose script template from resources.
-	 *
-	 * @param resourcePath
-	 *            the resource path.
-	 * @return the script template.
-	 */
-	public static String loadScript( final String resourcePath )
-	{
-		try
-		{
-			return new String( ApposeUtils.class.getResourceAsStream( resourcePath ).readAllBytes() );
-		}
-		catch ( final Exception e )
-		{
-			throw new RuntimeException( "Failed to load Appose script template from resources: " + resourcePath, e );
-		}
+		// Icy is always XYCZT.
+		final int nx = dims[ 0 ] > 1 ? 0 : -1;
+		final int ny = dims[ 1 ] > 1 ? 1 : -1;	
+		final int nc = dims[ 2 ] > 1 ? 2 : -1;
+		final int nz = dims[ 3 ] > 1 ? 3 : -1;
+		final int nt = dims[ 4 ] > 1 ? 4 : -1;
+		return new AxisInfo(nx, ny, nc, nz, nt);
 	}
 
 	public static IcyApposeLogger apposeLogger( final Class< ? > callerKlass )
@@ -139,30 +99,7 @@ public class ApposeUtils
 		return new IcyApposeEzLogger( status, callerKlass );
 	}
 
-	public static interface ApposeLogger extends AutoCloseable
-	{
-
-		void logInfo( String msg );
-
-		Consumer< String > errorLogger();
-
-		Consumer< String > infoLogger();
-
-		ProgressConsumer progressLogger();
-
-		void logProgress( String title, long current, long maximum );
-
-		void logError( String msg );
-
-		@Override
-		default void close() throws Exception
-		{
-			// Default implementation does nothing, override if needed.
-		}
-
-	}
-
-	private static class IcyApposeLogger implements ApposeLogger
+	public static class IcyApposeLogger implements ApposeTaskListener
 	{
 		private final ProgressFrame pf;
 
@@ -184,7 +121,6 @@ public class ApposeUtils
 			};
 		}
 
-		@Override
 		public void logInfo( final String msg )
 		{
 			if ( msg != null )
@@ -192,43 +128,47 @@ public class ApposeUtils
 		}
 
 		@Override
-		public void logError( final String msg )
-		{
-			logInfo( msg );
+		public Consumer<TaskEvent> taskListener() {
+			return e -> {
+				if ( e.message != null && !e.message.trim().isEmpty() )
+					logInfo( e.responseType + ": " + e.message );
+				if ( e.current >= 0 && e.maximum > 0 )
+					progressConsumer.accept( e.message, e.current, e.maximum );
+			};
 		}
 
 		@Override
-		public void logProgress( final String title, final long current, final long maximum )
-		{
-			progressConsumer.accept( title, current, maximum );
+		public Consumer<String> outputListener() {
+			return s -> logInfo( s );
 		}
 
 		@Override
-		public ProgressConsumer progressLogger()
-		{
+		public Consumer<String> errorListener() {
+			return str -> {
+				if ( str != null && str.contains( "✔ The" ) && str.contains( "environment has been installed." ) )
+				{
+					final String envName = str.substring( str.indexOf( "✔ The" ) + 5, str.indexOf( "environment" ) );
+					logInfo( "Python environment " + envName + " is ready." );
+				}
+				else
+				{
+					IcyLogger.error(klass, str);
+				}
+			};
+		}
+
+		@Override
+		public ProgressConsumer progressListener() {
 			return progressConsumer;
 		}
 
 		@Override
-		public Consumer< String > infoLogger()
-		{
-			return this::logInfo;
-		}
-
-		@Override
-		public Consumer< String > errorLogger()
-		{
-			return this::logError;
-		}
-
-		@Override
-		public void close() throws Exception
-		{
-			pf.close();
+		public void message(String msg) {
+			logInfo( msg );
 		}
 	}
 
-	private static class IcyApposeEzLogger implements ApposeLogger
+	private static class IcyApposeEzLogger implements ApposeTaskListener
 	{
 		private final EzStatus status;
 
@@ -242,49 +182,56 @@ public class ApposeUtils
 			this.klass = klass;
 			this.progressConsumer = ( title, current, maximum ) -> {
 				if ( title != null && !title.isBlank() )
-					logInfo( title );
+					status.setMessage(title);
 				status.setCompletion( ( double ) current / maximum );
 			};
 		}
 
 		@Override
-		public void logInfo( final String msg )
-		{
-			if ( msg != null )
+		public Consumer<TaskEvent> taskListener() {
+			return e -> {
+				if ( e.message != null && !e.message.trim().isEmpty() )
+					status.setMessage( e.responseType + ": " + e.message );
+				if ( e.current >= 0 && e.maximum > 0 )
+					progressConsumer.accept( e.message, e.current, e.maximum );
+			};
+		}
+
+		@Override
+		public Consumer<String> outputListener() {
+			return s -> status.setMessage( s );
+		}
+
+		@Override
+		public Consumer<String> errorListener() {
+			return str -> 
 			{
-				IcyLogger.info( klass, msg );
-				status.setMessage( msg );
-			}
+				/*
+				 * We have an issue here: pixi always return an error message that
+				 * says "✔ The cp4-cpu environment has been installed." when the
+				 * environment is ready, even if it was already installed. So we
+				 * need to filter out this message to avoid showing an error dialog.
+				 */
+				if ( str != null && str.contains( "✔ The" ) && str.contains( "environment has been installed." ) )
+				{
+					final String envName = str.substring( str.indexOf( "✔ The" ) + 5, str.indexOf( "environment" ) );
+					status.setMessage( "Python environment " + envName + " is ready." );
+				}
+				else
+				{
+					IcyLogger.error(klass, str);
+				}
+			};
 		}
 
 		@Override
-		public void logError( final String msg )
-		{
-			logInfo( msg );
-		}
-
-		@Override
-		public void logProgress( final String title, final long current, final long maximum )
-		{
-			progressConsumer.accept( title, current, maximum );
-		}
-
-		@Override
-		public ProgressConsumer progressLogger()
-		{
+		public ProgressConsumer progressListener() {
 			return progressConsumer;
 		}
 
 		@Override
-		public Consumer< String > infoLogger()
-		{
-			return this::logInfo;
-		}
-
-		@Override
-		public Consumer< String > errorLogger()
-		{
-			return this::logError;
+		public void message(String msg) {
+			status.setMessage( msg );
 		}
 	}
 

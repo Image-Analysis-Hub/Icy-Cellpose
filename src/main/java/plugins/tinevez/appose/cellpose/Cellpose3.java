@@ -19,34 +19,28 @@
 package plugins.tinevez.appose.cellpose;
 
 import static plugins.tinevez.appose.ApposeUtils.apposeEzLogger;
-import static plugins.tinevez.appose.ApposeUtils.getDimensionality;
+import static plugins.tinevez.appose.ApposeUtils.getAxisInfo;
 import static plugins.tinevez.appose.ApposeUtils.getGlasbeyDarkColorMap;
 import static plugins.tinevez.appose.ApposeUtils.getGlasbeyDarkColors;
-import static plugins.tinevez.appose.ApposeUtils.loadScript;
-import static plugins.tinevez.appose.ApposeUtils.pixiEnv;
 
 import java.awt.Color;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.groovy.json.FastStringService;
-import org.apposed.appose.Appose;
-import org.apposed.appose.Environment;
-import org.apposed.appose.NDArray;
-import org.apposed.appose.Service;
-import org.apposed.appose.Service.Task;
-import org.apposed.appose.Service.TaskStatus;
-import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginName;
-import org.bioimageanalysis.icy.model.roi.ROI;
-import org.bioimageanalysis.icy.model.sequence.Sequence;
-import org.bioimageanalysis.icy.model.sequence.SequenceUtil;
-
-import net.imglib2.appose.NDArrays;
+import fr.icy.extension.plugin.annotation_.IcyPluginName;
+import fr.icy.model.roi.ROI;
+import fr.icy.model.sequence.Sequence;
+import fr.icy.model.sequence.SequenceUtil;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.cellpose.ApposeTaskListener;
+import net.imglib2.cellpose.AxisInfo;
+import net.imglib2.cellpose.Cellpose;
+import net.imglib2.cellpose.Cellpose3BuiltinModels;
+import net.imglib2.cellpose.Cellpose3Parameters;
+import net.imglib2.cellpose.CellposeOutput;
 import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import plugins.adufour.ezplug.EzGroup;
 import plugins.adufour.ezplug.EzLabel;
 import plugins.adufour.ezplug.EzPlug;
@@ -58,7 +52,6 @@ import plugins.adufour.ezplug.EzVarSequence;
 import plugins.adufour.roi.LabelExtractor;
 import plugins.adufour.roi.LabelExtractor.ExtractionType;
 import plugins.adufour.vars.lang.VarSequence;
-import plugins.tinevez.appose.ApposeUtils.ApposeLogger;
 import plugins.tinevez.imglib2icy.ImgLib2IcyFunctions;
 import plugins.tinevez.imglib2icy.VirtualSequence.DimensionArrangement;
 
@@ -74,7 +67,7 @@ public class Cellpose3 extends EzPlug
 
 	// 1. Basic Cellpose parameters group.
 
-	protected final EzVarEnum< Cellpose3Model > ezModel;
+	protected final EzVarEnum< Cellpose3BuiltinModels > ezModel;
 
 	protected final EzVarInteger ezChan1;
 
@@ -127,7 +120,7 @@ public class Cellpose3 extends EzPlug
 
 		// Cellpose basic parameters.
 
-		this.ezModel = new EzVarEnum<>( "Pretrained model", Cellpose3Model.values(), Cellpose3Model.CYTO3 );
+		this.ezModel = new EzVarEnum<>( "Pretrained model", Cellpose3BuiltinModels.values(), Cellpose3BuiltinModels.CYTO3 );
 		ezModel.setToolTipText( "<html>Select the pretrained Cellpose model to use.</html>" );
 		this.ezChan1 = new EzVarInteger( "Main channel", 1, 0, 3, 1 );
 		ezChan1.setToolTipText( "<html>Select the main channel to use for segmentation. "
@@ -224,7 +217,7 @@ public class Cellpose3 extends EzPlug
 	{
 		ezInfo.setText( " " );
 		final Sequence sequence = ezSequence.getValue( true );
-		final Cellpose3Model model = ezModel.getValue();
+		final Cellpose3BuiltinModels model = ezModel.getValue();
 		final int chan = ezChan1.getValue();
 		final int chan2 = ezChan2.getValue();
 		final int diameter = ezDiameter.getValue();
@@ -241,7 +234,7 @@ public class Cellpose3 extends EzPlug
 				? pixelSizeZ / pixelSizeXY
 				: 1.;
 
-		final Cellpose3Parameters parameters = new Cellpose3Parameters.Builder()
+		final Cellpose3Parameters parameters = Cellpose3Parameters.builder()
 				.model( model )
 				.channels( List.of( chan, chan2 ) )
 				.diameter( diameter )
@@ -266,12 +259,12 @@ public class Cellpose3 extends EzPlug
 
 	public void execute( final Sequence sequence, final Cellpose3Parameters parameters ) throws Exception
 	{
-		final ApposeLogger apposeLogger = apposeEzLogger( getClass(), getStatus() );
+		final ApposeTaskListener apposeLogger = apposeEzLogger( getClass(), getStatus() );
 		final Sequence output = process( sequence, parameters, apposeLogger );
 
 		if ( ezExportROI.getValue() )
 		{
-			apposeLogger.logInfo( "Converting Cellpose output to ROIs" );
+			apposeLogger.message( "Converting Cellpose output to ROIs" );
 			cleanOldRois( sequence );
 			final List< ROI > rois = extractRois( output );
 			sequence.addROIs( rois, true );
@@ -291,13 +284,13 @@ public class Cellpose3 extends EzPlug
 	public static Sequence process(
 			final Sequence input,
 			final Cellpose3Parameters parameters,
-			final ApposeLogger apposeLogger ) throws Exception
+			final ApposeTaskListener apposeLogger ) throws Exception
 	{
 		@SuppressWarnings( "rawtypes" )
 		final Img img = ImgLib2IcyFunctions.wrap( input );
-		final String dimensionality = getDimensionality( input );
+		final AxisInfo axisInfo = getAxisInfo( input );
 		@SuppressWarnings( { "unchecked", "rawtypes" } )
-		final Img out = process( img, dimensionality, parameters, apposeLogger );
+		final RandomAccessibleInterval out = process( img, axisInfo, parameters, apposeLogger );
 
 		final DimensionArrangement inputDims = ImgLib2IcyFunctions.getDimensionArrangement( input );
 		final DimensionArrangement outputDims = inputDims.dropC();
@@ -317,79 +310,14 @@ public class Cellpose3 extends EzPlug
 		return output;
 	}
 
-	private static < T extends RealType< T > & NativeType< T > > Img< T > process(
+	private static < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval<UnsignedShortType> process(
 			final Img< T > img,
-			final String dimensionality,
+			final AxisInfo axisInfo,
 			final Cellpose3Parameters parameters,
-			final ApposeLogger apposeLogger ) throws Exception
+			final ApposeTaskListener apposeLogger ) throws Exception
 	{
-		Thread.currentThread().setContextClassLoader( FastStringService.class.getClassLoader() );
-
-		// Inputs.
-		final NDArray ndArray = NDArrays.asNDArray( img );
-		// Get flipped axes order.
-		final Map< String, Integer > axesOrder = new LinkedHashMap<>();
-		for ( int d = 0; d < img.numDimensions(); d++ )
-		{
-			final int flippedD = img.numDimensions() - d - 1;
-			axesOrder.put( "" + dimensionality.charAt( d ), flippedD );
-		}
-
-		// Copy the input to a shared memory image.
-		final Map< String, Object > inputs = new HashMap<>();
-		inputs.put( "image", ndArray );
-		inputs.put( "axes", axesOrder );
-
-		// Environment.
-		final Environment env = Appose
-				.pixi()
-				.content( pixiEnv( "/cellpose-pixi.toml" ) )
-				.subscribeProgress( apposeLogger.progressLogger() )
-				.subscribeOutput( apposeLogger.infoLogger() )
-				.subscribeError( apposeLogger.errorLogger() )
-				.build();
-
-		// Python service.
-		try (final Service python = env.python())
-		{
-			// Appose task.
-			final Task task = python.task( getScript( parameters ), inputs );
-			task.listen( e -> {
-				if ( e.maximum != 0 )
-					apposeLogger.logProgress( e.message, e.current, e.maximum );
-				else
-					apposeLogger.logInfo( e.message );
-			} );
-
-			// Start the script, and return to Java immediately.
-			apposeLogger.logInfo( "Starting Cellpose task" );
-			final long start = System.currentTimeMillis();
-			task.start();
-			apposeLogger.logInfo( "Cellpose task started" );
-
-			task.waitFor();
-			apposeLogger.logInfo( "Cellpose task finished with status: " + task.status );
-
-			// Verify that it worked.
-			if ( task.status != TaskStatus.COMPLETE )
-			{
-				String errorMsg = "Python script failed with status: " + task.status;
-				if ( task.error != null && !task.error.isEmpty() )
-					errorMsg += "\nPython error: " + task.error;
-				apposeLogger.logError( errorMsg );
-				System.err.println( errorMsg );
-				throw new RuntimeException( "Python script failed with status: " + task.status );
-			}
-
-			// Benchmark.
-			final long end = System.currentTimeMillis();
-			apposeLogger.logInfo( "Task finished in " + ( end - start ) / 1000. + " s" );
-
-			final NDArray maskArr = ( NDArray ) task.outputs.get( "masks" );
-			apposeLogger.logInfo( "Received output from Python: " + maskArr.shape() );
-			final Img< T > output = NDArrays.asArrayImg( maskArr );
-			return output;
-		}
+		CellposeOutput<UnsignedShortType> output = Cellpose.cellpose3(img, axisInfo, parameters, apposeLogger );
+		return output.labels;
 	}
 
 	static void cleanOldRois( final Sequence input )
@@ -415,31 +343,5 @@ public class Cellpose3 extends EzPlug
 			roi.setName( String.format( format, i ) );
 		}
 		return rois;
-	}
-
-	private static String getScript( final Cellpose3Parameters parameters )
-	{
-		final String template = loadScript( "/CellposeAppose2DBatch.py" );
-
-		final Map< String, String > settings = new LinkedHashMap<>();
-		settings.put( "${--pretrained_model}", parameters.model().modelName() );
-		settings.put( "${--diameter}", "" + parameters.diameter() );
-		settings.put( "${--chan}", "" + parameters.channels().get( 0 ) );
-		settings.put( "${--chan2}", "" + parameters.channels().get( 1 ) );
-
-		settings.put( "${--flow_threshold}", "" + parameters.flowThreshold() );
-		settings.put( "${--cellprob_threshold}", "" + parameters.cellProbThreshold() );
-		settings.put( "${--min_size}", "" + parameters.minSize() );
-
-		settings.put( "${--do_3D}", parameters.do3D() ? "True" : "False" );
-		settings.put( "${--stitch_threshold}", "" + parameters.stitchThreshold() );
-		settings.put( "${--anisotropy}", "" + parameters.anisotropy() );
-
-		settings.put( "${--use_gpu}", parameters.useGpu() ? "True" : "False" );
-
-		String script = template;
-		for ( final Map.Entry< String, String > entry : settings.entrySet() )
-			script = script.replace( entry.getKey(), entry.getValue() );
-		return script;
 	}
 }

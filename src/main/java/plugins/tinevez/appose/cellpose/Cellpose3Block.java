@@ -6,11 +6,12 @@ import static plugins.tinevez.appose.cellpose.Cellpose3.process;
 
 import java.util.List;
 
-import org.bioimageanalysis.icy.extension.plugin.abstract_.Plugin;
-import org.bioimageanalysis.icy.extension.plugin.annotation_.IcyPluginName;
-import org.bioimageanalysis.icy.model.roi.ROI;
-import org.bioimageanalysis.icy.model.sequence.Sequence;
-
+import fr.icy.extension.plugin.abstract_.Plugin;
+import fr.icy.extension.plugin.annotation_.IcyPluginName;
+import fr.icy.model.roi.ROI;
+import fr.icy.model.sequence.Sequence;
+import net.imglib2.cellpose.Cellpose3BuiltinModels;
+import net.imglib2.cellpose.Cellpose3Parameters;
 import plugins.adufour.blocks.lang.Block;
 import plugins.adufour.blocks.util.VarList;
 import plugins.adufour.vars.lang.VarBoolean;
@@ -19,7 +20,7 @@ import plugins.adufour.vars.lang.VarInteger;
 import plugins.adufour.vars.lang.VarROIArray;
 import plugins.adufour.vars.lang.VarSequence;
 import plugins.tinevez.appose.ApposeUtils;
-import plugins.tinevez.appose.ApposeUtils.ApposeLogger;
+import plugins.tinevez.appose.ApposeUtils.IcyApposeLogger;
 
 @IcyPluginName( "Cellpose 3" )
 public class Cellpose3Block extends Plugin implements Block
@@ -29,7 +30,7 @@ public class Cellpose3Block extends Plugin implements Block
 
 	protected final VarSequence input;
 
-	protected final VarEnum< Cellpose3Model > varModel;
+	protected final VarEnum< Cellpose3BuiltinModels > varModel;
 
 	protected final VarInteger varChan1;
 
@@ -50,7 +51,7 @@ public class Cellpose3Block extends Plugin implements Block
 	public Cellpose3Block()
 	{
 		this.input = new VarSequence( "Input sequence", null );
-		this.varModel = new VarEnum<>( "Pretrained model", Cellpose3Model.CYTO3 );
+		this.varModel = new VarEnum<>( "Pretrained model", Cellpose3BuiltinModels.CYTO3 );
 		this.varChan1 = new VarInteger( "Main channel", 1 );
 		this.varChan2 = new VarInteger( "Optional channel", 0 );
 		this.varDiameter = new VarInteger( "Diameter (pixels)", 30 );
@@ -65,7 +66,7 @@ public class Cellpose3Block extends Plugin implements Block
 	@Override
 	public void run()
 	{
-		final Cellpose3Model model = varModel.getValue();
+		final Cellpose3BuiltinModels model = varModel.getValue();
 		final int chan = varChan1.getValue();
 		final int chan2 = varChan2.getValue();
 		final int diameter = varDiameter.getValue();
@@ -76,7 +77,7 @@ public class Cellpose3Block extends Plugin implements Block
 				.diameter( diameter )
 				.build();
 		final Sequence inSeq = input.getValue( true );
-		final ApposeLogger logger = ApposeUtils.apposeLogger( getClass() );
+		IcyApposeLogger logger = ApposeUtils.apposeLogger( getClass() );
 		try
 		{
 			final Sequence outSeq = process( inSeq, parameters, logger );
