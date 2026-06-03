@@ -1,8 +1,7 @@
 package plugins.tinevez.appose.cellpose;
 
-import static plugins.tinevez.appose.cellpose.Cellpose3.cleanOldRois;
-import static plugins.tinevez.appose.cellpose.Cellpose3.extractRois;
-import static plugins.tinevez.appose.cellpose.Cellpose3.process;
+import static plugins.tinevez.appose.cellpose.Cellpose3Plugin.cleanOldRois;
+import static plugins.tinevez.appose.cellpose.Cellpose3Plugin.extractRois;
 
 import java.util.List;
 
@@ -77,13 +76,15 @@ public class Cellpose3Block extends Plugin implements Block
 				.diameter( diameter )
 				.build();
 		final Sequence inSeq = input.getValue( true );
-		IcyApposeLogger logger = ApposeUtils.apposeLogger( getClass() );
+		final IcyApposeLogger logger = ApposeUtils.apposeLogger( getClass() );
 		try
 		{
-			final Sequence outSeq = process( inSeq, parameters, logger );
+			final Sequence outSeq = Cellpose.cellpose( inSeq, parameters, logger );
 
 			if ( exportSequence.getValue() || outputSequence.isReferenced() )
+			{
 				outputSequence.setValue( outSeq );
+			}
 
 			if ( exportROI.getValue() )
 			{

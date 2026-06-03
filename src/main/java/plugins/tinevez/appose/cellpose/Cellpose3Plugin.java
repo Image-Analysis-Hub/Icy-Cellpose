@@ -19,8 +19,6 @@
 package plugins.tinevez.appose.cellpose;
 
 import static plugins.tinevez.appose.ApposeUtils.apposeEzLogger;
-import static plugins.tinevez.appose.ApposeUtils.getAxisInfo;
-import static plugins.tinevez.appose.ApposeUtils.getGlasbeyDarkColorMap;
 import static plugins.tinevez.appose.ApposeUtils.getGlasbeyDarkColors;
 
 import java.awt.Color;
@@ -31,18 +29,9 @@ import org.apache.groovy.json.FastStringService;
 import fr.icy.extension.plugin.annotation_.IcyPluginName;
 import fr.icy.model.roi.ROI;
 import fr.icy.model.sequence.Sequence;
-import fr.icy.model.sequence.SequenceUtil;
-import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.cellpose.ApposeTaskListener;
-import net.imglib2.cellpose.AxisInfo;
-import net.imglib2.cellpose.Cellpose;
 import net.imglib2.cellpose.Cellpose3BuiltinModels;
 import net.imglib2.cellpose.Cellpose3Parameters;
-import net.imglib2.cellpose.CellposeOutput;
-import net.imglib2.img.Img;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
 import plugins.adufour.ezplug.EzGroup;
 import plugins.adufour.ezplug.EzLabel;
 import plugins.adufour.ezplug.EzPlug;
@@ -54,16 +43,12 @@ import plugins.adufour.ezplug.EzVarSequence;
 import plugins.adufour.roi.LabelExtractor;
 import plugins.adufour.roi.LabelExtractor.ExtractionType;
 import plugins.adufour.vars.lang.VarSequence;
-import plugins.tinevez.imglib2icy.ImgLib2IcyFunctions;
-import plugins.tinevez.imglib2icy.VirtualSequence.DimensionArrangement;
 
 @IcyPluginName( "Cellpose 3" )
-public class Cellpose3 extends EzPlug
+public class Cellpose3Plugin extends EzPlug
 {
 
 	static final String CELLPOSE_ROI_NAME_PREFIX = "Cellpose3Roi_";
-
-	protected static int resultID = 1;
 
 	protected final EzVarSequence ezSequence;
 
@@ -116,7 +101,7 @@ public class Cellpose3 extends EzPlug
 
 	private final EzGroup ez3DProcessing;
 
-	public Cellpose3()
+	public Cellpose3Plugin()
 	{
 		this.ezSequence = new EzVarSequence( "Input sequence" );
 
@@ -165,7 +150,7 @@ public class Cellpose3 extends EzPlug
 		this.ez3DProcessing = new EzGroup( "3D processing",
 				ezDo3D, ezStitchThreshold );
 		ez3DProcessing.setFoldedState( true );
-		
+
 		// Export options.
 
 		this.ezExportROI = new EzVarBoolean( "Export ROIs", true );
@@ -178,7 +163,7 @@ public class Cellpose3 extends EzPlug
 
 		// Info.
 
-		this.ezInfo = new EzLabel( " " );
+		this.ezInfo = new EzLabel( "Cellpose 3 plugin" );
 
 		// Listeners.
 		ezSequence.addVarChangeListener( ( source, seq ) -> {
@@ -252,9 +237,9 @@ public class Cellpose3 extends EzPlug
 		{
 			/*
 			 *  Classloader for FastStringService.
-			 *  
+			 *
 			 *  Without the line below, we get the following error in Icy:
-			 *  
+			 *
 			 *  <pre>
 java.lang.RuntimeException: Cellpose failed: Unable to load FastStringService
 at plugins.tinevez.appose.cellpose.Cellpose3.execute(Cellpose3.java:256)
@@ -273,7 +258,7 @@ at org.apposed.appose.util.Messages.encode(Messages.java:75)
 </pre>
 			 */
 			Thread.currentThread().setContextClassLoader( FastStringService.class.getClassLoader() );
-			
+
 			execute( sequence, parameters );
 		}
 		catch ( final Exception e )
@@ -286,7 +271,7 @@ at org.apposed.appose.util.Messages.encode(Messages.java:75)
 	public void execute( final Sequence sequence, final Cellpose3Parameters parameters ) throws Exception
 	{
 		final ApposeTaskListener apposeLogger = apposeEzLogger( getClass(), getStatus() );
-		final Sequence output = process( sequence, parameters, apposeLogger );
+		final Sequence output = Cellpose.cellpose( sequence, parameters, apposeLogger );
 
 		if ( ezExportROI.getValue() )
 		{
@@ -296,61 +281,30 @@ at org.apposed.appose.util.Messages.encode(Messages.java:75)
 			sequence.addROIs( rois, true );
 
 			if ( getUI() != null )
+			{
 				ezInfo.setText( rois.size() + " objects detected" );
+			}
 		}
 
 		if ( ezExportSequence.getValue() || outputSequence.isReferenced() )
 		{
 			outputSequence.setValue( output );
 			if ( !isHeadLess() )
+			{
 				addSequence( output );
+			}
 		}
-	}
-
-	public static Sequence process(
-			final Sequence input,
-			final Cellpose3Parameters parameters,
-			final ApposeTaskListener apposeLogger ) throws Exception
-	{
-		@SuppressWarnings( "rawtypes" )
-		final Img img = ImgLib2IcyFunctions.wrap( input );
-		final AxisInfo axisInfo = getAxisInfo( input );
-		@SuppressWarnings( { "unchecked", "rawtypes" } )
-		final RandomAccessibleInterval out = process( img, axisInfo, parameters, apposeLogger );
-
-		final DimensionArrangement inputDims = ImgLib2IcyFunctions.getDimensionArrangement( input );
-		final DimensionArrangement outputDims = inputDims.dropC();
-		@SuppressWarnings( "unchecked" )
-		final Sequence tmp = ImgLib2IcyFunctions.wrap( out, outputDims );
-		final Sequence output = SequenceUtil.getCopy( tmp );
-
-		output.setPixelSizeX( input.getPixelSizeX() );
-		output.setPixelSizeY( input.getPixelSizeY() );
-		output.setPixelSizeZ( input.getPixelSizeZ() );
-		output.setTimeInterval( input.getTimeInterval() );
-		output.setChannelName( 0, "Cellpose labels" );
-		output.setColormap( 0, getGlasbeyDarkColorMap(), true );
-		final String name = input.getName() + "_Cellpose#" + resultID++;
-		output.setName( name );
-
-		return output;
-	}
-
-	private static < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval<UnsignedShortType> process(
-			final Img< T > img,
-			final AxisInfo axisInfo,
-			final Cellpose3Parameters parameters,
-			final ApposeTaskListener apposeLogger ) throws Exception
-	{
-		CellposeOutput<UnsignedShortType> output = Cellpose.cellpose3(img, axisInfo, parameters, apposeLogger );
-		return output.labels;
 	}
 
 	static void cleanOldRois( final Sequence input )
 	{
 		for ( final ROI roi : input.getROIs() )
+		{
 			if ( roi.getName().startsWith( CELLPOSE_ROI_NAME_PREFIX ) )
+			{
 				input.removeROI( roi, false );
+			}
+		}
 	}
 
 	static List< ROI > extractRois( final Sequence output )
