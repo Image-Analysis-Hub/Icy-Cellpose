@@ -80,7 +80,9 @@ public class Cellpose3Plugin extends EzPlug
 
 	protected EzVarBoolean ezExportROI;
 
-	protected EzVarBoolean ezExportSequence;
+	protected EzVarBoolean ezExportLabels;
+
+	protected EzVarBoolean ezExportFlows;
 
 	protected EzVarBoolean ezExportSwPool;
 
@@ -154,12 +156,13 @@ public class Cellpose3Plugin extends EzPlug
 		// Export options.
 
 		this.ezExportROI = new EzVarBoolean( "Export ROIs", true );
-		this.ezExportSequence = new EzVarBoolean( "Export labels", false );
+		this.ezExportLabels = new EzVarBoolean( "Export labels", false );
+		this.ezExportFlows = new EzVarBoolean( "Export flows", false );
 		this.ezExportSwPool = new EzVarBoolean( "Prepare for tracking", false );
 		ezExportSwPool.setToolTipText(
 				"Exports the detected object in a format compatible with the \"Spot Tracking\" plug-in" );
 
-		this.ezExportOptions = new EzGroup( "Export options", ezExportROI, ezExportSequence, ezExportSwPool );
+		this.ezExportOptions = new EzGroup( "Export options", ezExportROI, ezExportLabels, ezExportFlows, ezExportSwPool );
 
 		// Info.
 
@@ -213,6 +216,7 @@ public class Cellpose3Plugin extends EzPlug
 		final int minSize = ezMinSize.getValue();
 		final boolean do3D = ezDo3D.getValue() && sequence.getSizeZ() > 1;
 		final double stitchThreshold = sequence.getSizeZ() > 1 ? ezStitchThreshold.getValue() : 0.;
+		final boolean computeFlows = ezExportFlows.getValue();
 
 		// ADD: Calculate anisotropy from pixel sizes
 		final double pixelSizeZ = sequence.getPixelSizeZ();
@@ -231,6 +235,7 @@ public class Cellpose3Plugin extends EzPlug
 				.do3D( do3D )
 				.anisotropy( anisotropy )
 				.stitchThreshold( stitchThreshold )
+				.computeFlows( computeFlows )
 				.build();
 
 		try
@@ -271,28 +276,31 @@ at org.apposed.appose.util.Messages.encode(Messages.java:75)
 	public void execute( final Sequence sequence, final Cellpose3Parameters parameters ) throws Exception
 	{
 		final ApposeTaskListener apposeLogger = apposeEzLogger( getClass(), getStatus() );
-		final Sequence output = Cellpose.cellpose( sequence, parameters, apposeLogger );
+		final List< Sequence > outputs = Cellpose.cellpose( sequence, parameters, apposeLogger );
+		final Sequence outputLabels = outputs.get( 0 );
 
 		if ( ezExportROI.getValue() )
 		{
 			apposeLogger.message( "Converting Cellpose output to ROIs" );
 			cleanOldRois( sequence );
-			final List< ROI > rois = extractRois( output );
+			final List< ROI > rois = extractRois( outputLabels );
 			sequence.addROIs( rois, true );
 
 			if ( getUI() != null )
-			{
 				ezInfo.setText( rois.size() + " objects detected" );
-			}
 		}
 
-		if ( ezExportSequence.getValue() || outputSequence.isReferenced() )
+		if ( ezExportLabels.getValue() || outputSequence.isReferenced() )
 		{
-			outputSequence.setValue( output );
+			outputSequence.setValue( outputLabels );
 			if ( !isHeadLess() )
-			{
-				addSequence( output );
-			}
+				addSequence( outputLabels );
+		}
+
+		if (ezExportFlows.getValue() && outputs.size() > 1)
+		{
+			final Sequence outputFlows = outputs.get( 1 );
+			addSequence( outputFlows );
 		}
 	}
 

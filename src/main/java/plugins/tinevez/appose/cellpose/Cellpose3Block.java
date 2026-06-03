@@ -79,17 +79,16 @@ public class Cellpose3Block extends Plugin implements Block
 		final IcyApposeLogger logger = ApposeUtils.apposeLogger( getClass() );
 		try
 		{
-			final Sequence outSeq = Cellpose.cellpose( inSeq, parameters, logger );
+			final List< Sequence > outputs = Cellpose.cellpose( inSeq, parameters, logger );
+			final Sequence outputLabels = outputs.get( 0 );
 
 			if ( exportSequence.getValue() || outputSequence.isReferenced() )
-			{
-				outputSequence.setValue( outSeq );
-			}
+				outputSequence.setValue( outputLabels );
 
 			if ( exportROI.getValue() )
 			{
 				cleanOldRois( inSeq );
-				final List< ROI > rois = extractRois( outSeq );
+				final List< ROI > rois = extractRois( outputLabels );
 				outputROIs.add( rois.toArray( new ROI[ 0 ] ) );
 				inSeq.addROIs( rois, false );
 			}
