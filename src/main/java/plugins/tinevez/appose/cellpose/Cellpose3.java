@@ -26,6 +26,8 @@ import static plugins.tinevez.appose.ApposeUtils.getGlasbeyDarkColors;
 import java.awt.Color;
 import java.util.List;
 
+import org.apache.groovy.json.FastStringService;
+
 import fr.icy.extension.plugin.annotation_.IcyPluginName;
 import fr.icy.model.roi.ROI;
 import fr.icy.model.sequence.Sequence;
@@ -248,6 +250,30 @@ public class Cellpose3 extends EzPlug
 
 		try
 		{
+			/*
+			 *  Classloader for FastStringService.
+			 *  
+			 *  Without the line below, we get the following error in Icy:
+			 *  
+			 *  <pre>
+java.lang.RuntimeException: Cellpose failed: Unable to load FastStringService
+at plugins.tinevez.appose.cellpose.Cellpose3.execute(Cellpose3.java:256)
+at plugins.adufour.ezplug.EzPlug.lambda$new$0(EzPlug.java:103)
+at java.base/java.lang.Thread.run(Thread.java:1583)
+Caused by: java.lang.RuntimeException: Unable to load FastStringService
+at org.apache.groovy.json.internal.FastStringUtils.getService(FastStringUtils.java:56)
+at org.apache.groovy.json.internal.FastStringUtils.toCharArray(FastStringUtils.java:66)
+at org.apache.groovy.json.internal.CharBuf.addJsonFieldName(CharBuf.java:524)
+at groovy.json.DefaultJsonGenerator.writeMapEntry(DefaultJsonGenerator.java:400)
+at groovy.json.DefaultJsonGenerator.writeMap(DefaultJsonGenerator.java:389)
+at groovy.json.DefaultJsonGenerator.writeObject(DefaultJsonGenerator.java:204)
+at groovy.json.DefaultJsonGenerator.writeObject(DefaultJsonGenerator.java:168)
+at groovy.json.DefaultJsonGenerator.toJson(DefaultJsonGenerator.java:102)
+at org.apposed.appose.util.Messages.encode(Messages.java:75)
+</pre>
+			 */
+			Thread.currentThread().setContextClassLoader( FastStringService.class.getClassLoader() );
+			
 			execute( sequence, parameters );
 		}
 		catch ( final Exception e )
