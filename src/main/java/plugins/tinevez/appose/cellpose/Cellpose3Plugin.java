@@ -236,6 +236,7 @@ public class Cellpose3Plugin extends EzPlug
 				.anisotropy( anisotropy )
 				.stitchThreshold( stitchThreshold )
 				.computeFlows( computeFlows )
+				.resample( true )
 				.build();
 
 		try
