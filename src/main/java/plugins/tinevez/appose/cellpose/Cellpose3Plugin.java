@@ -26,6 +26,7 @@ import java.util.List;
 
 import org.apache.groovy.json.FastStringService;
 
+import fr.icy.common.geom.point.Point5D;
 import fr.icy.extension.plugin.annotation_.IcyPluginName;
 import fr.icy.model.roi.ROI;
 import fr.icy.model.sequence.Sequence;
@@ -324,10 +325,20 @@ at org.apposed.appose.util.Messages.encode(Messages.java:75)
 		// How many digits for the number of ROIs?
 		final int nDigits = nRois > 0 ? ( int ) Math.ceil( Math.log10( nRois ) ) : 1;
 		final String format = CELLPOSE_ROI_NAME_PREFIX + "%0" + nDigits + "d";
+		// Shift origin
+		final double[] pos2d = output.getPosition();
+		// To pixel coordinates.
+		pos2d[ 0 ] /= output.getPixelSizeX();
+		pos2d[ 1 ] /= output.getPixelSizeY();
+		final Point5D origin = new Point5D.Double( pos2d );
 		for ( int i = 0; i < rois.size(); i++ )
 		{
 			final ROI roi = rois.get( i );
+			final Point5D currentPos = roi.getPosition5D();
+			currentPos.setX( currentPos.getX() + origin.getX() );
+			currentPos.setY( currentPos.getY() + origin.getY() );
 			final Color color = colors.get( i % colors.size() );
+			roi.setPosition5D( currentPos );
 			roi.setColor( color );
 			roi.setName( String.format( format, i ) );
 		}

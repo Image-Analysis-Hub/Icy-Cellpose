@@ -12,13 +12,27 @@ import java.util.function.Consumer;
 import org.apposed.appose.Builder.ProgressConsumer;
 import org.apposed.appose.TaskEvent;
 
+import fr.icy.common.geom.point.Point5D;
+import fr.icy.common.geom.rectangle.Rectangle5D;
+import fr.icy.common.type.DataIteratorUtil;
+import fr.icy.extension.kernel.roi.roi3d.ROI3DBox;
 import fr.icy.gui.frame.progress.ProgressFrame;
 import fr.icy.model.colormap.IcyColorMap;
+import fr.icy.model.roi.ROI;
 import fr.icy.model.sequence.Sequence;
+import fr.icy.model.sequence.SequenceDataIterator;
 import fr.icy.system.logging.IcyLogger;
+import net.imglib2.FinalInterval;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.cellpose.ApposeTaskListener;
 import net.imglib2.cellpose.AxisInfo;
+import net.imglib2.img.Img;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.IntegerType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.view.Views;
 import plugins.adufour.ezplug.EzStatus;
+import plugins.tinevez.imglib2icy.ImgLib2IcyFunctions;
 
 public class ApposeUtils
 {
@@ -82,11 +96,11 @@ public class ApposeUtils
 		final long[] dims = getDims( sequence );
 		// Icy is always XYCZT.
 		final int nx = dims[ 0 ] > 1 ? 0 : -1;
-		final int ny = dims[ 1 ] > 1 ? 1 : -1;	
+		final int ny = dims[ 1 ] > 1 ? 1 : -1;
 		final int nc = dims[ 2 ] > 1 ? 2 : -1;
 		final int nz = dims[ 3 ] > 1 ? 3 : -1;
 		final int nt = dims[ 4 ] > 1 ? 4 : -1;
-		return new AxisInfo(nx, ny, nc, nz, nt);
+		return new AxisInfo( nx, ny, nc, nz, nt );
 	}
 
 	public static IcyApposeLogger apposeLogger( final Class< ? > callerKlass )
@@ -128,7 +142,8 @@ public class ApposeUtils
 		}
 
 		@Override
-		public Consumer<TaskEvent> taskListener() {
+		public Consumer< TaskEvent > taskListener()
+		{
 			return e -> {
 				if ( e.message != null && !e.message.trim().isEmpty() )
 					logInfo( e.responseType + ": " + e.message );
@@ -138,12 +153,14 @@ public class ApposeUtils
 		}
 
 		@Override
-		public Consumer<String> outputListener() {
+		public Consumer< String > outputListener()
+		{
 			return s -> logInfo( s );
 		}
 
 		@Override
-		public Consumer<String> errorListener() {
+		public Consumer< String > errorListener()
+		{
 			return str -> {
 				if ( str != null && str.contains( "✔ The" ) && str.contains( "environment has been installed." ) )
 				{
@@ -152,18 +169,20 @@ public class ApposeUtils
 				}
 				else
 				{
-					IcyLogger.error(klass, str);
+					IcyLogger.error( klass, str );
 				}
 			};
 		}
 
 		@Override
-		public ProgressConsumer progressListener() {
+		public ProgressConsumer progressListener()
+		{
 			return progressConsumer;
 		}
 
 		@Override
-		public void message(String msg) {
+		public void message( final String msg )
+		{
 			logInfo( msg );
 		}
 	}
@@ -182,13 +201,14 @@ public class ApposeUtils
 			this.klass = klass;
 			this.progressConsumer = ( title, current, maximum ) -> {
 				if ( title != null && !title.isBlank() )
-					status.setMessage(title);
+					status.setMessage( title );
 				status.setCompletion( ( double ) current / maximum );
 			};
 		}
 
 		@Override
-		public Consumer<TaskEvent> taskListener() {
+		public Consumer< TaskEvent > taskListener()
+		{
 			return e -> {
 				if ( e.message != null && !e.message.trim().isEmpty() )
 					status.setMessage( e.responseType + ": " + e.message );
@@ -198,19 +218,21 @@ public class ApposeUtils
 		}
 
 		@Override
-		public Consumer<String> outputListener() {
+		public Consumer< String > outputListener()
+		{
 			return s -> status.setMessage( s );
 		}
 
 		@Override
-		public Consumer<String> errorListener() {
-			return str -> 
-			{
+		public Consumer< String > errorListener()
+		{
+			return str -> {
 				/*
-				 * We have an issue here: pixi always return an error message that
-				 * says "✔ The cp4-cpu environment has been installed." when the
-				 * environment is ready, even if it was already installed. So we
-				 * need to filter out this message to avoid showing an error dialog.
+				 * We have an issue here: pixi always return an error message
+				 * that says "✔ The cp4-cpu environment has been installed."
+				 * when the environment is ready, even if it was already
+				 * installed. So we need to filter out this message to avoid
+				 * showing an error dialog.
 				 */
 				if ( str != null && str.contains( "✔ The" ) && str.contains( "environment has been installed." ) )
 				{
@@ -219,18 +241,20 @@ public class ApposeUtils
 				}
 				else
 				{
-					IcyLogger.error(klass, str);
+					IcyLogger.error( klass, str );
 				}
 			};
 		}
 
 		@Override
-		public ProgressConsumer progressListener() {
+		public ProgressConsumer progressListener()
+		{
 			return progressConsumer;
 		}
 
 		@Override
-		public void message(String msg) {
+		public void message( final String msg )
+		{
 			status.setMessage( msg );
 		}
 	}
@@ -267,6 +291,62 @@ public class ApposeUtils
 		public Color getColor( final int index )
 		{
 			return super.getColor( index % nColors );
+		}
+	}
+
+	/**
+	 * Wraps the specified Icy sequence into an ImgLib2 Img. If the input
+	 * sequence has a focused ROI, then the returned Img will be a view on the
+	 * ROI, otherwise it will be a view on the whole sequence.
+	 *
+	 * @param <T>
+	 *            the pixel type of the returned Img.
+	 * @param input
+	 *            the Icy sequence to wrap.
+	 * @return
+	 */
+	public static < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval< T > toImg( final Sequence input )
+	{
+		final Img< T > img = ImgLib2IcyFunctions.wrap( input );
+		final ROI roi = input.getSelectedROI();
+		if ( roi == null )
+			return img;
+
+		// Crop the view to the bounding box of the ROI.
+		final Rectangle5D bounds = roi.getBounds5D();
+		final long min[] = img.minAsLongArray();
+		final long max[] = img.maxAsLongArray();
+		min[ 0 ] = ( long ) bounds.getMinX();
+		min[ 1 ] = ( long ) bounds.getMinY();
+		max[ 0 ] = ( long ) bounds.getMaxX();
+		max[ 1 ] = ( long ) bounds.getMaxY();
+		final FinalInterval interval = new FinalInterval( min, max );
+		return Views.interval( img, interval );
+	}
+
+	public static final < T extends NativeType< T > & IntegerType< T > > void clearOutsideRoi( final Sequence sequence, final ROI roi )
+	{
+		if ( roi == null )
+			return;
+
+		try
+		{
+			// Move the ROI to the origin.
+			final ROI copy = roi.getCopy();
+			final Point5D origin = copy.getPosition5D();
+			origin.setX( 0. );
+			origin.setY( 0. );
+			origin.setZ( 0. );
+			copy.setPosition5D( origin );
+			// Inverse and clear.
+			final ROI roiSeq = new ROI3DBox( sequence.getBounds5D().toRectangle3D() );
+			final ROI inverse = roiSeq.getSubtraction( copy );
+			final double value = 0.;
+			DataIteratorUtil.set( new SequenceDataIterator( sequence, inverse ), value );
+		}
+		catch ( UnsupportedOperationException | InterruptedException e )
+		{
+			e.printStackTrace();
 		}
 	}
 }

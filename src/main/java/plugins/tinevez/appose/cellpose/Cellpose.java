@@ -6,14 +6,16 @@ import static plugins.tinevez.appose.ApposeUtils.getGlasbeyDarkColorMap;
 import java.util.Collections;
 import java.util.List;
 
+import fr.icy.model.roi.ROI;
 import fr.icy.model.sequence.Sequence;
 import fr.icy.model.sequence.SequenceUtil;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.cellpose.ApposeTaskListener;
 import net.imglib2.cellpose.AxisInfo;
 import net.imglib2.cellpose.Cellpose3Parameters;
 import net.imglib2.cellpose.CellposeOutput;
-import net.imglib2.img.Img;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import plugins.tinevez.appose.ApposeUtils;
 import plugins.tinevez.imglib2icy.ImgLib2IcyFunctions;
 import plugins.tinevez.imglib2icy.VirtualSequence.DimensionArrangement;
 
@@ -46,8 +48,13 @@ public class Cellpose
 			final Cellpose3Parameters parameters,
 			final ApposeTaskListener apposeLogger ) throws Exception
 	{
+		// Use it later to shift result ROIs.
+		final ROI roi = input.getSelectedROI();
+		final long originX = ( roi == null ) ? 0 : ( long ) roi.getBounds5D().getMinX();
+		final long originY = ( roi == null ) ? 0 : ( long ) roi.getBounds5D().getMinY();
+
 		@SuppressWarnings( "rawtypes" )
-		final Img img = ImgLib2IcyFunctions.wrap( input );
+		final RandomAccessibleInterval img = ApposeUtils.toImg( input );
 		final AxisInfo axisInfo = getAxisInfo( input );
 		@SuppressWarnings( "unchecked" )
 		final CellposeOutput< UnsignedShortType > out = net.imglib2.cellpose.Cellpose.cellpose3( img, axisInfo, parameters, apposeLogger );
@@ -56,6 +63,7 @@ public class Cellpose
 		final DimensionArrangement outputDims = inputDims.dropC();
 		final Sequence tmpLabels = ImgLib2IcyFunctions.wrap( out.labels, outputDims );
 		final Sequence outputLabels = SequenceUtil.getCopy( tmpLabels );
+		ApposeUtils.clearOutsideRoi( outputLabels, roi );
 		// Calibration.
 		outputLabels.setPixelSizeX( input.getPixelSizeX() );
 		outputLabels.setPixelSizeY( input.getPixelSizeY() );
@@ -63,6 +71,9 @@ public class Cellpose
 		outputLabels.setTimeInterval( input.getTimeInterval() );
 		outputLabels.setChannelName( 0, "Cellpose labels" );
 		outputLabels.setColormap( 0, getGlasbeyDarkColorMap(), true );
+		// Shift the origin if we do ROI processing.
+		outputLabels.setPositionX( originX * input.getPixelSizeX() );
+		outputLabels.setPositionY( originY * input.getPixelSizeY() );
 		final String name = input.getName() + "_Cellpose#" + resultID++;
 		outputLabels.setName( name );
 
@@ -97,11 +108,15 @@ public class Cellpose
 
 			final Sequence tmpFlows = ImgLib2IcyFunctions.wrap( out.flows, outputFlowDims );
 			final Sequence outputFlows = SequenceUtil.getCopy( tmpFlows );
+			ApposeUtils.clearOutsideRoi( outputFlows, roi );
 			outputFlows.setName( input.getName() + "_Cellpose_flows#" + resultID );
 			outputFlows.setPixelSizeX( input.getPixelSizeX() );
 			outputFlows.setPixelSizeY( input.getPixelSizeY() );
 			outputFlows.setPixelSizeZ( input.getPixelSizeZ() );
 			outputFlows.setTimeInterval( input.getTimeInterval() );
+			// Shift the origin if we do ROI processing.
+			outputFlows.setPositionX( originX * input.getPixelSizeX() );
+			outputFlows.setPositionY( originY * input.getPixelSizeY() );
 
 			return List.of( outputLabels, outputFlows );
 		}
