@@ -308,20 +308,31 @@ public class ApposeUtils
 	public static < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval< T > toImg( final Sequence input )
 	{
 		final Img< T > img = ImgLib2IcyFunctions.wrap( input );
-		final ROI roi = input.getSelectedROI();
-		if ( roi == null )
+		final ROI selectedRoi = input.getSelectedROI();
+		if ( selectedRoi == null )
 			return img;
 
-		// Crop the view to the bounding box of the ROI.
-		final Rectangle5D bounds = roi.getBounds5D();
-		final long min[] = img.minAsLongArray();
-		final long max[] = img.maxAsLongArray();
-		min[ 0 ] = ( long ) bounds.getMinX();
-		min[ 1 ] = ( long ) bounds.getMinY();
-		max[ 0 ] = ( long ) bounds.getMaxX();
-		max[ 1 ] = ( long ) bounds.getMaxY();
-		final FinalInterval interval = new FinalInterval( min, max );
-		return Views.interval( img, interval );
+		// Intersect with the Sequence bounds.
+		final ROI roiSeq = new ROI3DBox( input.getBounds5D().toRectangle3D() );
+		try
+		{
+			final ROI roi = selectedRoi.intersect( roiSeq, true );
+			// Crop the view to the bounding box of the ROI.
+			final Rectangle5D bounds = roi.getBounds5D();
+			final long min[] = img.minAsLongArray();
+			final long max[] = img.maxAsLongArray();
+			min[ 0 ] = ( long ) bounds.getMinX();
+			min[ 1 ] = ( long ) bounds.getMinY();
+			max[ 0 ] = ( long ) bounds.getMaxX();
+			max[ 1 ] = ( long ) bounds.getMaxY();
+			final FinalInterval interval = new FinalInterval( min, max );
+			return Views.interval( img, interval );
+		}
+		catch ( final UnsupportedOperationException | InterruptedException e )
+		{
+			e.printStackTrace();
+			return img;
+		}
 	}
 
 	public static final < T extends NativeType< T > & IntegerType< T > > void clearOutsideRoi( final Sequence sequence, final ROI roi )
