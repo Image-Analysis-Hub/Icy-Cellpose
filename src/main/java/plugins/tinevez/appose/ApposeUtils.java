@@ -13,7 +13,6 @@ import org.apposed.appose.Builder.ProgressConsumer;
 import org.apposed.appose.TaskEvent;
 
 import fr.icy.common.geom.point.Point5D;
-import fr.icy.common.geom.rectangle.Rectangle5D;
 import fr.icy.common.type.DataIteratorUtil;
 import fr.icy.extension.kernel.roi.roi3d.ROI3DBox;
 import fr.icy.gui.frame.progress.ProgressFrame;
@@ -22,17 +21,11 @@ import fr.icy.model.roi.ROI;
 import fr.icy.model.sequence.Sequence;
 import fr.icy.model.sequence.SequenceDataIterator;
 import fr.icy.system.logging.IcyLogger;
-import net.imglib2.FinalInterval;
-import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.cellpose.ApposeTaskListener;
 import net.imglib2.cellpose.AxisInfo;
-import net.imglib2.img.Img;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.IntegerType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.view.Views;
 import plugins.adufour.ezplug.EzStatus;
-import plugins.tinevez.imglib2icy.ImgLib2IcyFunctions;
 
 public class ApposeUtils
 {
@@ -292,45 +285,6 @@ public class ApposeUtils
 		{
 			return super.getColor( index % nColors );
 		}
-	}
-
-	/**
-	 * Wraps the specified Icy sequence into an ImgLib2 Img. If the input
-	 * sequence has a focused ROI, then the returned Img will be a view on the
-	 * ROI, otherwise it will be a view on the whole sequence.
-	 *
-	 * @param <T>
-	 *            the pixel type of the returned Img.
-	 * @param input
-	 *            the Icy sequence to wrap.
-	 * @param roi
-	 *            the ROI to focus on, or <code>null</code> to use the whole
-	 *            sequence. Warning: the ROI, if not <code>null</code>, must be
-	 *            fully contained within the bounds of the sequence. If it
-	 *            extends beyond, you will get OutOfBounds exceptions at some
-	 *            point.
-	 * @return a view on the specified sequence.
-	 */
-	public static < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval< T > toImg( final Sequence input, final ROI roi )
-	{
-		final Img< T > img = ImgLib2IcyFunctions.wrap( input );
-		if ( roi == null )
-			return img;
-
-		final Rectangle5D bounds = roi.getBounds5D();
-		final long min[] = img.minAsLongArray();
-		final long max[] = img.maxAsLongArray();
-		min[ 0 ] = ( long ) bounds.getMinX();
-		max[ 0 ] = ( long ) bounds.getMaxX() - 1;
-		min[ 1 ] = ( long ) bounds.getMinY();
-		max[ 1 ] = ( long ) bounds.getMaxY() - 1;
-		if ( max.length > 2 )
-		{
-			min[ 2 ] = ( long ) bounds.getMinZ();
-			max[ 2 ] = ( long ) bounds.getMaxZ() - 1;
-		}
-		final FinalInterval interval = new FinalInterval( min, max );
-		return Views.interval( img, interval );
 	}
 
 	public static final < T extends NativeType< T > & IntegerType< T > > void clearOutsideRoi( final Sequence sequence, final ROI roi )

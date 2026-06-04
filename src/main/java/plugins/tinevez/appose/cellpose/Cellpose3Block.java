@@ -1,7 +1,8 @@
 package plugins.tinevez.appose.cellpose;
 
-import static plugins.tinevez.appose.cellpose.Cellpose3Plugin.cleanOldRois;
-import static plugins.tinevez.appose.cellpose.Cellpose3Plugin.extractRois;
+import static plugins.tinevez.appose.cellpose.AbstractCellposePlugin.cleanOldRois;
+import static plugins.tinevez.appose.cellpose.AbstractCellposePlugin.extractRois;
+import static plugins.tinevez.appose.cellpose.Cellpose3Plugin.CELLPOSE3_ROI_PREFIX;
 
 import java.util.List;
 
@@ -87,8 +88,8 @@ public class Cellpose3Block extends Plugin implements Block
 
 			if ( exportROI.getValue() )
 			{
-				cleanOldRois( inSeq );
-				final List< ROI > rois = extractRois( outputLabels );
+				cleanOldRois( inSeq, CELLPOSE3_ROI_PREFIX );
+				final List< ROI > rois = extractRois( outputLabels, CELLPOSE3_ROI_PREFIX );
 				outputROIs.add( rois.toArray( new ROI[ 0 ] ) );
 				inSeq.addROIs( rois, false );
 			}

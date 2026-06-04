@@ -23,41 +23,33 @@ import java.util.List;
 import fr.icy.extension.plugin.annotation_.IcyPluginName;
 import fr.icy.model.sequence.Sequence;
 import net.imglib2.cellpose.ApposeTaskListener;
-import net.imglib2.cellpose.Cellpose3BuiltinModels;
-import net.imglib2.cellpose.Cellpose3Parameters;
+import net.imglib2.cellpose.Cellpose4Parameters;
 import net.imglib2.cellpose.CellposeParameters;
-import plugins.adufour.ezplug.EzVarEnum;
 import plugins.adufour.ezplug.EzVarInteger;
 
-@IcyPluginName( "Cellpose 3" )
-public class Cellpose3Plugin extends AbstractCellposePlugin
+@IcyPluginName( "Cellpose SAM" )
+public class Cellpose4Plugin extends AbstractCellposePlugin
 {
 
-	static final String CELLPOSE3_ROI_PREFIX = "Cellpose3Roi_";
-
-	// 1. Basic Cellpose 3 parameters group.
-
-	protected final EzVarEnum< Cellpose3BuiltinModels > ezModel;
+	static final String CELLPOSE_ROI_NAME_PREFIX = "Cellpose4Roi_";
 
 	protected final EzVarInteger ezChan1;
 
 	protected final EzVarInteger ezChan2;
 
-	public Cellpose3Plugin()
-	{
-		// Cellpose basic parameters.
+	protected final EzVarInteger ezChan3;
 
-		this.ezModel = new EzVarEnum<>( "Pretrained model", Cellpose3BuiltinModels.values(), Cellpose3BuiltinModels.CYTO3 );
-		ezModel.setToolTipText( "<html>Select the pretrained Cellpose model to use.</html>" );
-		this.ezChan1 = new EzVarInteger( "Main channel", 1, 0, 3, 1 );
-		ezChan1.setToolTipText( "<html>Select the main channel to use for segmentation. "
-				+ "Use 0 to specify using a merge of all channels.</html>" );
-		this.ezChan2 = new EzVarInteger( "Optional channel", 0, 0, 3, 1 );
-		ezChan2.setToolTipText( "<html>Select the nuclear channel for the 'cyto' models. "
-				+ "Use 0 to skip using this optional channel.</html>" );
+	public Cellpose4Plugin()
+	{
+		this.ezChan1 = new EzVarInteger( "Channel 1", 1, 0, 3, 1 );
+		ezChan1.setToolTipText( "<html>Select the first channel to pass on to Cellpose SAM. Set to 0 to skip.</html>" );
+		this.ezChan2 = new EzVarInteger( "Channel 2", 0, 0, 3, 1 );
+		ezChan2.setToolTipText( "<html>Select the second channel to pass on to Cellpose SAM. Set to 0 to skip.</html>" );
+		this.ezChan3 = new EzVarInteger( "Channel 3", 0, 0, 3, 1 );
+		ezChan3.setToolTipText( "<html>Select the third channel to pass on to Cellpose SAM. Set to 0 to skip.</html>" );
 
 		// Add them and diameter to the group.
-		ezCellposeBasicParams.add( ezModel, ezChan1, ezChan2, ezDiameter );
+		ezCellposeBasicParams.add( ezChan1, ezChan2, ezChan3, ezDiameter );
 
 		// Listeners.
 		ezSequence.addVarChangeListener( ( source, seq ) -> {
@@ -72,30 +64,26 @@ public class Cellpose3Plugin extends AbstractCellposePlugin
 				final int nC = seq.getSizeC();
 				ezChan1.setMaxValue( nC );
 				ezChan2.setMaxValue( nC );
+				ezChan3.setMaxValue( nC );
 			}
 		} );
 	}
 
 	@Override
-	protected String cellposeRoiNamePrefix()
-	{
-		return CELLPOSE3_ROI_PREFIX;
-	}
-
-	@Override
 	protected List< Sequence > runCellpose( final Sequence sequence, final CellposeParameters parameters, final ApposeTaskListener apposeLogger ) throws Exception
 	{
-		return Cellpose.cellpose( sequence, ( Cellpose3Parameters ) parameters, apposeLogger );
+		return Cellpose.cellpose( sequence, ( Cellpose4Parameters ) parameters, apposeLogger );
 	}
 
 	@Override
-	protected Cellpose3Parameters getParameters()
+	protected Cellpose4Parameters getParameters()
 	{
 		final Sequence sequence = ezSequence.getValue( true );
 
-		final Cellpose3BuiltinModels model = ezModel.getValue();
-		final int chan = ezChan1.getValue();
-		final int chan2 = ezChan2.getValue();
+		final int chan0 = ezChan1.getValue();
+		final int chan1 = ezChan2.getValue();
+		final int chan2 = ezChan3.getValue();
+
 		final int diameter = ezDiameter.getValue();
 		final double flowThreshold = ezFlowThreshold.getValue();
 		final double cellprobThreshold = ezCellprobThreshold.getValue();
@@ -111,9 +99,10 @@ public class Cellpose3Plugin extends AbstractCellposePlugin
 				? pixelSizeZ / pixelSizeXY
 				: 1.;
 
-		return Cellpose3Parameters.builder()
-				.model( model )
-				.channels( List.of( chan, chan2 ) )
+		return Cellpose4Parameters.builder()
+				.chan0( chan0 == 0 ? null : chan0 - 1 )
+				.chan1( chan1 == 0 ? null : chan1 - 1 )
+				.chan2( chan2 == 0 ? null : chan2 - 1 )
 				.diameter( diameter )
 				.flowThreshold( flowThreshold )
 				.cellProbThreshold( cellprobThreshold )
@@ -124,5 +113,11 @@ public class Cellpose3Plugin extends AbstractCellposePlugin
 				.computeFlows( computeFlows )
 				.resample( true )
 				.build();
+	}
+
+	@Override
+	protected String cellposeRoiNamePrefix()
+	{
+		return CELLPOSE_ROI_NAME_PREFIX;
 	}
 }
