@@ -303,36 +303,34 @@ public class ApposeUtils
 	 *            the pixel type of the returned Img.
 	 * @param input
 	 *            the Icy sequence to wrap.
-	 * @return
+	 * @param roi
+	 *            the ROI to focus on, or <code>null</code> to use the whole
+	 *            sequence. Warning: the ROI, if not <code>null</code>, must be
+	 *            fully contained within the bounds of the sequence. If it
+	 *            extends beyond, you will get OutOfBounds exceptions at some
+	 *            point.
+	 * @return a view on the specified sequence.
 	 */
-	public static < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval< T > toImg( final Sequence input )
+	public static < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval< T > toImg( final Sequence input, final ROI roi )
 	{
 		final Img< T > img = ImgLib2IcyFunctions.wrap( input );
-		final ROI selectedRoi = input.getSelectedROI();
-		if ( selectedRoi == null )
+		if ( roi == null )
 			return img;
 
-		// Intersect with the Sequence bounds.
-		final ROI roiSeq = new ROI3DBox( input.getBounds5D().toRectangle3D() );
-		try
+		final Rectangle5D bounds = roi.getBounds5D();
+		final long min[] = img.minAsLongArray();
+		final long max[] = img.maxAsLongArray();
+		min[ 0 ] = ( long ) bounds.getMinX();
+		max[ 0 ] = ( long ) bounds.getMaxX() - 1;
+		min[ 1 ] = ( long ) bounds.getMinY();
+		max[ 1 ] = ( long ) bounds.getMaxY() - 1;
+		if ( max.length > 2 )
 		{
-			final ROI roi = selectedRoi.intersect( roiSeq, true );
-			// Crop the view to the bounding box of the ROI.
-			final Rectangle5D bounds = roi.getBounds5D();
-			final long min[] = img.minAsLongArray();
-			final long max[] = img.maxAsLongArray();
-			min[ 0 ] = ( long ) bounds.getMinX();
-			min[ 1 ] = ( long ) bounds.getMinY();
-			max[ 0 ] = ( long ) bounds.getMaxX();
-			max[ 1 ] = ( long ) bounds.getMaxY();
-			final FinalInterval interval = new FinalInterval( min, max );
-			return Views.interval( img, interval );
+			min[ 2 ] = ( long ) bounds.getMinZ();
+			max[ 2 ] = ( long ) bounds.getMaxZ() - 1;
 		}
-		catch ( final UnsupportedOperationException | InterruptedException e )
-		{
-			e.printStackTrace();
-			return img;
-		}
+		final FinalInterval interval = new FinalInterval( min, max );
+		return Views.interval( img, interval );
 	}
 
 	public static final < T extends NativeType< T > & IntegerType< T > > void clearOutsideRoi( final Sequence sequence, final ROI roi )

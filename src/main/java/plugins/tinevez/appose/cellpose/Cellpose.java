@@ -6,6 +6,7 @@ import static plugins.tinevez.appose.ApposeUtils.getGlasbeyDarkColorMap;
 import java.util.Collections;
 import java.util.List;
 
+import fr.icy.extension.kernel.roi.roi3d.ROI3DBox;
 import fr.icy.model.roi.ROI;
 import fr.icy.model.sequence.Sequence;
 import fr.icy.model.sequence.SequenceUtil;
@@ -48,13 +49,21 @@ public class Cellpose
 			final Cellpose3Parameters parameters,
 			final ApposeTaskListener apposeLogger ) throws Exception
 	{
-		// Use it later to shift result ROIs.
-		final ROI roi = input.getSelectedROI();
-		final long originX = ( roi == null ) ? 0 : ( long ) roi.getBounds5D().getMinX();
-		final long originY = ( roi == null ) ? 0 : ( long ) roi.getBounds5D().getMinY();
-
+		// Selected ROI
+		final ROI selectedRoi = input.getSelectedROI();
+		final ROI roi; // View into 'roi'
+		if ( selectedRoi != null )
+		{
+			// Intersect with the image bounds
+			final ROI roiSeq = new ROI3DBox( input.getBounds5D().toRectangle3D() );
+			roi = selectedRoi.intersect( roiSeq, true );
+		}
+		else
+		{
+			roi = null;
+		}
 		@SuppressWarnings( "rawtypes" )
-		final RandomAccessibleInterval img = ApposeUtils.toImg( input );
+		final RandomAccessibleInterval img = ApposeUtils.toImg( input, roi );
 		final AxisInfo axisInfo = getAxisInfo( input );
 		@SuppressWarnings( "unchecked" )
 		final CellposeOutput< UnsignedShortType > out = net.imglib2.cellpose.Cellpose.cellpose3( img, axisInfo, parameters, apposeLogger );
@@ -71,9 +80,14 @@ public class Cellpose
 		outputLabels.setTimeInterval( input.getTimeInterval() );
 		outputLabels.setChannelName( 0, "Cellpose labels" );
 		outputLabels.setColormap( 0, getGlasbeyDarkColorMap(), true );
+		// Origin of new ROIs.
+		final long originX = ( roi == null ) ? 0 : ( long ) roi.getBounds5D().getMinX();
+		final long originY = ( roi == null ) ? 0 : ( long ) roi.getBounds5D().getMinY();
+		final long originZ = ( roi == null ) ? 0 : ( long ) roi.getBounds5D().getMinZ();
 		// Shift the origin if we do ROI processing.
 		outputLabels.setPositionX( originX * input.getPixelSizeX() );
 		outputLabels.setPositionY( originY * input.getPixelSizeY() );
+		outputLabels.setPositionZ( originZ * input.getPixelSizeZ() );
 		final String name = input.getName() + "_Cellpose#" + resultID++;
 		outputLabels.setName( name );
 
@@ -117,6 +131,7 @@ public class Cellpose
 			// Shift the origin if we do ROI processing.
 			outputFlows.setPositionX( originX * input.getPixelSizeX() );
 			outputFlows.setPositionY( originY * input.getPixelSizeY() );
+			outputFlows.setPositionZ( originZ * input.getPixelSizeZ() );
 
 			return List.of( outputLabels, outputFlows );
 		}
